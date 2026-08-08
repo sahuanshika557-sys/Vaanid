@@ -123,9 +123,12 @@ export function useInputControls({
 
   const handleToggleMicrophone = useCallback(
     async (enabled?: boolean) => {
-      await microphoneToggle.toggle(enabled);
-      // persist audio input enabled preference
-      saveAudioInputEnabled(!microphoneToggle.enabled);
+      try {
+        await microphoneToggle.toggle(enabled);
+        saveAudioInputEnabled(!microphoneToggle.enabled);
+      } catch (error) {
+        console.warn('Microphone toggle deferred until room engine is connected:', error);
+      }
     },
     [microphoneToggle, saveAudioInputEnabled]
   );

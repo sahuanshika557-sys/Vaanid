@@ -56,4 +56,7 @@ if ($isCloud) {
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$repoRoot\backend'; uv run python src/agent.py dev"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$repoRoot\frontend'; pnpm dev"
 
-Write-Host "Started backend and frontend in separate PowerShell windows."
+Start-Sleep -Seconds 3
+Start-Process "http://localhost:3000"
+
+Write-Host "Started backend and frontend in separate PowerShell windows. Opening http://localhost:3000 in browser..."

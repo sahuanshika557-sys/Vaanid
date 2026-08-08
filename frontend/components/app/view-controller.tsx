@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { ConnectionState } from 'livekit-client';
 import { AnimatePresence, motion } from 'motion/react';
@@ -7,50 +8,173 @@ import { useSessionContext } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
 import { AgentSessionView_01 } from '@/components/agents-ui/blocks/agent-session-view-01';
 import { WelcomeView } from '@/components/app/welcome-view';
+import { Button } from '@/components/ui/button';
 
 const MotionWelcomeView = motion.create(WelcomeView);
 const MotionSessionView = motion.create(AgentSessionView_01);
 
 const VIEW_MOTION_PROPS = {
   variants: {
-    visible: {
-      opacity: 1,
-    },
-    hidden: {
-      opacity: 0,
-    },
+    visible: { opacity: 1 },
+    hidden: { opacity: 0 },
   },
   initial: 'hidden',
   animate: 'visible',
   exit: 'hidden',
-  transition: {
-    duration: 0.4,
-    ease: 'linear',
-  },
+  transition: { duration: 0.4, ease: 'linear' },
 };
+
+function CallEndedView({ onRestart }: { onRestart: () => void }) {
+  return (
+    <div className="flex min-h-svh flex-col items-center justify-center p-6 text-center">
+      <div className="mb-6 flex size-20 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-500">
+        <svg
+          className="size-10"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h2 className="text-foreground text-2xl font-bold tracking-tight md:text-3xl">
+        Conversation ended
+      </h2>
+      <p className="text-muted-foreground mt-2 max-w-sm text-sm leading-relaxed">
+        Thank you for speaking with Anisha. You can start a new session anytime.
+      </p>
+      <Button
+        size="lg"
+        onClick={onRestart}
+        className="mt-8 rounded-full font-mono text-xs font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 sm:w-64"
+      >
+        Start Again
+      </Button>
+    </div>
+  );
+}
+
+function MicErrorView({
+  errorType,
+  onRetry,
+}: {
+  errorType: 'blocked' | 'not_found' | 'generic';
+  onRetry: () => void;
+}) {
+  const isBlocked = errorType === 'blocked';
+  return (
+    <div className="flex min-h-svh flex-col items-center justify-center p-6 text-center">
+      <div className="bg-destructive/10 text-destructive border-destructive/20 mb-6 flex size-20 items-center justify-center rounded-full border">
+        <svg
+          className="size-10"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z M3 3l18 18"
+          />
+        </svg>
+      </div>
+      <h2 className="text-foreground text-2xl font-bold tracking-tight md:text-3xl">
+        {isBlocked ? 'Microphone access is blocked' : 'Microphone unavailable'}
+      </h2>
+      <p className="text-muted-foreground mt-2 max-w-md text-sm leading-relaxed">
+        {isBlocked
+          ? 'Please allow microphone access in your browser settings and try again.'
+          : 'Could not detect a working microphone. Please connect a microphone and try again.'}
+      </p>
+      <Button
+        size="lg"
+        onClick={onRetry}
+        className="mt-8 rounded-full font-mono text-xs font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 sm:w-64"
+      >
+        Try Again
+      </Button>
+    </div>
+  );
+}
 
 interface ViewControllerProps {
   appConfig: AppConfig;
 }
 
 export function ViewController({ appConfig }: ViewControllerProps) {
-  const { isConnected, connectionState, start } = useSessionContext();
+  const session = useSessionContext();
+  const { isConnected, connectionState, start, room } = session;
   const isConnecting = connectionState === ConnectionState.Connecting;
   const { resolvedTheme } = useTheme();
 
+  const [hasEnded, setHasEnded] = useState(false);
+  const [micError, setMicError] = useState<'blocked' | 'not_found' | 'generic' | null>(null);
+  const wasConnectedRef = useRef(false);
+
+  useEffect(() => {
+    if (isConnected && room) {
+      wasConnectedRef.current = true;
+      setHasEnded(false);
+      // Safely unlock browser audio playback context
+      room.startAudio().catch((err) => console.warn('startAudio failed:', err));
+    } else if (wasConnectedRef.current && !isConnecting) {
+      setHasEnded(true);
+    }
+  }, [isConnected, isConnecting, room]);
+
+  const handleStartCall = async () => {
+    setMicError(null);
+    setHasEnded(false);
+
+    try {
+      start();
+    } catch (err: unknown) {
+      const error = err as { name?: string };
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        setMicError('blocked');
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        setMicError('not_found');
+      } else {
+        setMicError('generic');
+      }
+    }
+  };
+
+  const handleRestart = () => {
+    wasConnectedRef.current = false;
+    handleStartCall();
+  };
+
   return (
     <AnimatePresence mode="wait">
-      {/* Welcome view */}
-      {!isConnected && (
+      {/* Microphone Error State */}
+      {micError && (
+        <motion.div key="mic-error" {...VIEW_MOTION_PROPS}>
+          <MicErrorView errorType={micError} onRetry={handleStartCall} />
+        </motion.div>
+      )}
+
+      {/* Call Ended State */}
+      {!micError && !isConnected && hasEnded && (
+        <motion.div key="call-ended" {...VIEW_MOTION_PROPS}>
+          <CallEndedView onRestart={handleRestart} />
+        </motion.div>
+      )}
+
+      {/* Ready / Connecting State */}
+      {!micError && !isConnected && !hasEnded && (
         <MotionWelcomeView
           key="welcome"
           {...VIEW_MOTION_PROPS}
           startButtonText={appConfig.startButtonText}
-          onStartCall={start}
+          onStartCall={handleStartCall}
           isConnecting={isConnecting}
         />
       )}
-      {/* Session view */}
+
+      {/* Active Session State (Listening / Speaking) */}
       {isConnected && (
         <MotionSessionView
           key="session-view"

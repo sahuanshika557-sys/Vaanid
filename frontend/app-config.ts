@@ -34,8 +34,9 @@ export interface AppConfig {
 
 export const APP_CONFIG_DEFAULTS: AppConfig = {
   companyName: 'Murf AI',
-  pageTitle: 'Voice Agent Starter',
-  pageDescription: 'A voice agent powered by Murf Falcon — the fastest TTS API',
+  pageTitle: 'Anisha — Murf AI Voice Support',
+  pageDescription:
+    'Meet Anisha, your AI customer support assistant powered by Murf Falcon TTS and LiveKit Agents',
 
   supportsChatInput: true,
   supportsVideoInput: true,
@@ -46,7 +47,10 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   accent: '#6366F1',
   logoDark: '/murf-logo-dark.svg',
   accentDark: '#818cf8',
-  startButtonText: 'Start talking',
+  startButtonText: 'Start Conversation',
+
+  audioVisualizerType: 'wave',
+  audioVisualizerWaveLineWidth: 3,
 
   // optional: audio visualization configuration
   // audioVisualizerType: 'bar',

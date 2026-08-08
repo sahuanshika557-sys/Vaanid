@@ -155,8 +155,42 @@ export interface AgentSessionView_01Props {
   className?: string;
 }
 
+function AgentStatusHeader({ agentState }: { agentState?: string }) {
+  let badgeColor = 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400';
+  let dotColor = 'bg-emerald-400 animate-pulse';
+  let label = 'Listening to you';
+
+  if (agentState === 'speaking') {
+    badgeColor = 'border-indigo-500/20 bg-indigo-500/10 text-indigo-400';
+    dotColor = 'bg-indigo-400 animate-bounce';
+    label = 'Anisha is speaking';
+  } else if (agentState === 'thinking') {
+    badgeColor = 'border-amber-500/20 bg-amber-500/10 text-amber-400';
+    dotColor = 'bg-amber-400 animate-ping';
+    label = 'Anisha is thinking...';
+  } else if (agentState === 'connecting' || agentState === 'initializing') {
+    badgeColor = 'border-blue-500/20 bg-blue-500/10 text-blue-400';
+    dotColor = 'bg-blue-400 animate-spin';
+    label = 'Connecting to Anisha...';
+  }
+
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-4 z-[60] flex items-center justify-center md:top-6">
+      <div
+        className={cn(
+          'inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold tracking-wide shadow-lg backdrop-blur-md transition-all duration-300',
+          badgeColor
+        )}
+      >
+        <span className={cn('size-2 rounded-full', dotColor)} />
+        <span>{label}</span>
+      </div>
+    </div>
+  );
+}
+
 export function AgentSessionView_01({
-  preConnectMessage = 'Agent is listening, ask it a question',
+  preConnectMessage = 'Anisha is listening, ask her a question',
   supportsChatInput = true,
   supportsVideoInput = true,
   supportsScreenShare = true,
@@ -204,6 +238,7 @@ export function AgentSessionView_01({
       className={cn('bg-background relative z-10 h-full w-full overflow-hidden', className)}
       {...props}
     >
+      <AgentStatusHeader agentState={agentState} />
       <Fade top className="absolute inset-x-4 top-0 z-10 h-40" />
       {/* transcript */}
 
@@ -266,6 +301,7 @@ export function AgentSessionView_01({
             isConnected={session.isConnected}
             onDisconnect={session.end}
             onIsChatOpenChange={setChatOpen}
+            onDeviceError={(err) => console.warn('Media device error suppressed:', err)}
           />
         </div>
       </motion.div>

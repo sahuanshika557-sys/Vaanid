@@ -231,14 +231,14 @@ async def test_multiturn_conversation() -> None:
 
         # Turn 1: Normal question
         result1 = await session.run(
-            user_input="What features does Nova Tech cloud storage offer?"
+            user_input="What features does Murf AI voice service offer?"
         )
         await (
             result1.expect.next_event()
             .is_message(role="assistant")
             .judge(
                 llm,
-                intent="Explains basic cloud storage features in a concise voice-first manner.",
+                intent="Explains basic voice service features in a concise voice-first manner.",
             )
         )
         result1.expect.no_more_events()
@@ -248,7 +248,7 @@ async def test_multiturn_conversation() -> None:
         await (
             result2.expect.next_event()
             .is_message(role="assistant")
-            .judge(llm, intent="Provides basic app setup guidance concisely.")
+            .judge(llm, intent="Provides basic setup guidance concisely.")
         )
         result2.expect.no_more_events()
 

@@ -1,22 +1,30 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/shadcn/utils';
 
-function WelcomeImage() {
+function AnishaAvatar() {
   return (
-    <svg
-      width="64"
-      height="64"
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-      className="text-foreground mb-4 size-14 animate-pulse md:size-16"
-    >
-      <path
-        d="M15 24V40C15 40.7957 14.6839 41.5587 14.1213 42.1213C13.5587 42.6839 12.7956 43 12 43C11.2044 43 10.4413 42.6839 9.87868 42.1213C9.31607 41.5587 9 40.7957 9 40V24C9 23.2044 9.31607 22.4413 9.87868 21.8787C10.4413 21.3161 11.2044 21 12 21C12.7956 21 13.5587 21.3161 14.1213 21.8787C14.6839 22.4413 15 23.2044 15 24ZM22 5C21.2044 5 20.4413 5.31607 19.8787 5.87868C19.3161 6.44129 19 7.20435 19 8V56C19 56.7957 19.3161 57.5587 19.8787 58.1213C20.4413 58.6839 21.2044 59 22 59C22.7956 59 23.5587 58.6839 24.1213 58.1213C24.6839 57.5587 25 56.7957 25 56V8C25 7.20435 24.6839 6.44129 24.1213 5.87868C23.5587 5.31607 22.7956 5 22 5ZM32 13C31.2044 13 30.4413 13.3161 29.8787 13.8787C29.3161 14.4413 29 15.2044 29 16V48C29 48.7957 29.3161 49.5587 29.8787 50.1213C30.4413 50.6839 31.2044 51 32 51C32.7956 51 33.5587 50.6839 34.1213 50.1213C34.6839 49.5587 35 48.7957 35 48V16C35 15.2044 34.6839 14.4413 34.1213 13.8787C33.5587 13.3161 32.7956 13 32 13ZM42 21C41.2043 21 40.4413 21.3161 39.8787 21.8787C39.3161 22.4413 39 23.2044 39 24V40C39 40.7957 39.3161 41.5587 39.8787 42.1213C40.4413 42.6839 41.2043 43 42 43C42.7957 43 43.5587 42.6839 44.1213 42.1213C44.6839 41.5587 45 40.7957 45 40V24C45 23.2044 44.6839 22.4413 44.1213 21.8787C43.5587 21.3161 42.7957 21 42 21ZM52 17C51.2043 17 50.4413 17.3161 49.8787 17.8787C49.3161 18.4413 49 19.2044 49 20V44C49 44.7957 49.3161 45.5587 49.8787 46.1213C50.4413 46.6839 51.2043 47 52 47C52.7957 47 53.5587 46.6839 54.1213 46.1213C54.6839 45.5587 55 44.7957 55 44V20C55 19.2044 54.6839 18.4413 54.1213 17.8787C53.5587 17.3161 52.7957 17 52 17Z"
-        fill="currentColor"
-      />
-    </svg>
+    <div className="relative mb-6 flex items-center justify-center">
+      <div className="absolute size-24 animate-ping rounded-full bg-indigo-500/20 duration-1000" />
+      <div className="absolute size-20 rounded-full bg-indigo-500/10" />
+      <div className="relative flex size-16 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-400 text-white shadow-lg shadow-indigo-500/30">
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className="size-8"
+        >
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+          <line x1="12" x2="12" y1="19" y2="22" />
+        </svg>
+      </div>
+    </div>
   );
 }
 
@@ -42,28 +50,34 @@ export const WelcomeView = ({
     >
       <div />
       <section className="bg-background flex w-full max-w-md flex-col items-center justify-center px-4 text-center">
-        <WelcomeImage />
+        <AnishaAvatar />
 
-        <h1 className="text-foreground text-xl font-semibold tracking-tight md:text-2xl">
-          Murf AI Voice Assistant
+        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-400">
+          <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
+          <span>English • Hindi • Hinglish</span>
+        </div>
+
+        <h1 className="text-foreground text-2xl font-bold tracking-tight md:text-3xl">
+          Anisha — AI Voice Assistant
         </h1>
 
         <p className="text-muted-foreground max-w-prose pt-2 text-sm leading-relaxed font-normal">
-          Experience natural conversational AI powered by Murf Falcon TTS and LiveKit Agents
+          Your customer support assistant for Murf AI voice services. Ready to assist with product
+          features, TTS capabilities, and technical guidance.
         </p>
 
         <Button
           size="lg"
           onClick={onStartCall}
           disabled={isConnecting}
-          aria-label={startButtonText}
+          aria-label={isConnecting ? 'Connecting you to Anisha' : startButtonText}
           className="mt-8 w-full max-w-xs rounded-full font-mono text-xs font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 sm:w-64"
           suppressHydrationWarning
         >
           {isConnecting ? (
             <span className="flex items-center gap-2">
               <span className="size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              Connecting...
+              Connecting to Anisha...
             </span>
           ) : (
             startButtonText
@@ -73,17 +87,8 @@ export const WelcomeView = ({
 
       <footer className="pt-8 text-center">
         <p className="text-muted-foreground max-w-prose text-xs leading-5 font-normal text-pretty md:text-sm">
-          Need help getting set up? Check out the{' '}
-          <a
-            target="_blank"
-            rel="noopener noreferrer"
-            href="https://docs.livekit.io/agents/start/voice-ai/"
-            aria-label="LiveKit Voice AI Quickstart Documentation"
-            className="hover:text-foreground underline underline-offset-4"
-          >
-            Voice AI quickstart
-          </a>
-          .
+          Powered by <span className="text-foreground font-semibold">Murf Falcon TTS</span> &{' '}
+          <span className="text-foreground font-semibold">LiveKit Agents</span>
         </p>
       </footer>
     </div>

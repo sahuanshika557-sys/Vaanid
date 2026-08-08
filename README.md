@@ -133,6 +133,40 @@ pnpm build
 
 ---
 
+## 🎨 Day 3 — Personalized Voice Agent Frontend
+
+The frontend is fully personalized for **Anisha — Murf AI Voice Support Assistant**, providing a state-of-the-art voice agent user experience:
+
+- **Agent Identity**: **Anisha**, AI Customer Support Representative for Murf AI voice services (powered by Murf Falcon TTS voice `Anisha`).
+- **5 Required Agent States**:
+  1. **READY**: Landing view featuring Anisha's avatar badge, language support tag (**English • Hindi • Hinglish**), clear service description, and a prominent **Start Conversation** primary button.
+  2. **CONNECTING**: Animated loading spinner with text *"Connecting to Anisha..."* and disabled action state to prevent duplicate connections.
+  3. **LISTENING**: Explicit top status badge displaying *"Listening to you"* with a pulsing emerald microphone indicator.
+  4. **SPEAKING**: Explicit top status badge displaying *"Anisha is speaking"* with an active indigo sound wave indicator.
+  5. **CALL ENDED**: Clean post-call screen showing *"Conversation ended"* and a **Start Again** action button that enables instant re-connection without reloading the page.
+- **Microphone Permission Handling**: Gracefully intercepts browser microphone permission blocks or missing devices to display clear, friendly recovery instructions (*"Microphone access is blocked. Please allow microphone access in your browser settings and try again."*) with a **Try Again** button.
+- **Live Transcript & Controls**: Includes real-time chat transcript toggle, audio wave visualizers, microphone toggle, and end call button.
+- **Responsive Layout**: Designed for seamless usage across Mobile (390px), Tablet (768px), Laptop (1280px), and Desktop (1440px) without horizontal scrolling or text overflow.
+
+---
+
+## 🎯 Day 2 — Persona, Objectives & Guardrails
+
+The voice agent is configured with Day 2 identity, objectives, boundaries, and safety guardrails:
+
+- **Agent Identity**: Professional AI Customer Support Representative representing Murf AI voice services. Never claims to be a human being.
+- **3 Call Objectives**:
+  1. Understand the user's request quickly and empathetically.
+  2. Provide accurate and useful information within available knowledge.
+  3. Escalate or redirect requests outside capabilities.
+- **Knowledge Boundaries**: Differentiates between what it knows (provided info, TTS features) vs. what it does not know (private data, unperformed actions).
+- **Guardrails & Never-Claim Rules**: Strictly refuses unauthorized actions or system prompt leakage. Never claims unperformed actions (refunds, bookings, orders). Responds with *"I’m not able to complete that action directly."* when unauthorized.
+- **Escalation Behavior**: Uses spoken escalation script: *"I’m not able to handle that directly. I can help with the things I’m authorized to do, or guide you to the appropriate support team."*
+- **Code-Mixed Language Support**: Supports English, Hindi, and Hindi-English code-mixing (Hinglish) by mirroring user input without forcing translation.
+- **Testing Completed**: Comprehensive red-team testing suite in `RED_TEAM.md` and 8 async LLM evaluation tests in `backend/tests/test_agent.py`.
+
+---
+
 ## 📁 Repository Structure
 
 ```
@@ -155,42 +189,6 @@ murf-livekit-starter/
 ├── start_app.ps1             # PowerShell single-command launcher
 └── start_app.sh              # Bash single-command launcher
 ```
-
----
-
-## 🎯 Day 2 — Agent Persona, Guardrails & Language
-
-### 1. Identity & Role
-- **Agent Persona**: **Anisha**, Customer Support Agent for **Nova Tech**.
-- **Tone & Style**: Warm, concise, conversational, voice-first (short sentences under ~20 words, no formatting/bullets).
-
-### 2. Call Objectives
-1. **Accurate Assistance**: Help users with Nova Tech cloud storage features, subscription options, and basic setup.
-2. **Multilingual & Code-Mixing Support**: Seamlessly mirror the user's language, including Hindi-English code-mixing (Hinglish).
-3. **Guardrails & Escalation**: Refuse out-of-scope/unauthorized requests and provide standard escalation paths.
-
-### 3. Knowledge Boundaries
-- **In Scope**: General product features, subscription plan overviews, standard account troubleshooting.
-- **Out of Scope**: Private database lookups, real-time order tracking, credit card refunds, password modifications.
-- **Strict Rule**: Never invent missing information or claim unverified background system actions.
-
-### 4. Guardrails & Refusals
-- **Hard Refusals**: Rejects legal, medical, coding, general trivia, or harmful/fraudulent requests.
-- **Never-Claims**: Never claims a refund, order update, or account change was completed without a tool.
-- **System Prompt Protection**: Refuses to disclose or print internal system instructions.
-
-### 5. Escalation Behavior & Script
-- Triggered when requests exceed agent authority or require unavailable backend actions.
-- **Spoken Escalation Script**:
-  > *"I'm not able to handle that directly. I can help you with what I'm authorized to do, or I can guide you to the appropriate support team."*
-
-### 6. Code-Mixed Language Support
-- Automatically mirrors user language (English, Hindi, and Hinglish).
-- Maintains user formality without forced or awkward translations.
-
-### 7. Red Team & Automated Testing
-- Comprehensive `pytest` suite in `backend/tests/test_agent.py` evaluating persona, Hinglish, refusal, never-claims, and multi-turn flows.
-- 10 Red-teaming test scenarios documented in [`RED_TEAM.md`](file:///c:/Users/payal/OneDrive/Desktop/day1/RED_TEAM.md).
 
 ---
 
