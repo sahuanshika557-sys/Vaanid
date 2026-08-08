@@ -27,11 +27,11 @@ This project includes a Python backend voice pipeline (STT → LLM → TTS) and 
 
 ```mermaid
 flowchart LR
-    A[🎙️ User Audio Input] -->|LiveKit WebRTC| B[Deepgram STT (Nova-3)]
-    B -->|Transcribed Text| C[Google Gemini LLM]
-    C -->|Response Stream| D[Murf Falcon TTS]
-    D -->|Streaming Audio| E[LiveKit Transport]
-    E -->|Audio Output| F[🔊 User Hears Agent]
+    A["🎙️ User Audio Input"] -->|"LiveKit Transport"| B["Deepgram STT (Nova-3)"]
+    B -->|"Transcribed Text"| C["Google Gemini LLM"]
+    C -->|"Response Stream"| D["Murf Falcon TTS"]
+    D -->|"Streaming Audio"| E["LiveKit Transport"]
+    E -->|"Audio Output"| F["🔊 User Hears Agent"]
 
     style A fill:#1e293b,stroke:#64748b,color:#fff
     style B fill:#0284c7,stroke:#38bdf8,color:#fff
