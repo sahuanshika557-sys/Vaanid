@@ -33,10 +33,10 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG_DEFAULTS: AppConfig = {
-  companyName: 'Murf AI',
-  pageTitle: 'Anisha — Murf AI Voice Support',
+  companyName: 'Dukandar AI',
+  pageTitle: 'Dukandar AI — Local Commerce Voice Assistant',
   pageDescription:
-    'Meet Anisha, your AI customer support assistant powered by Murf Falcon TTS and LiveKit Agents',
+    'Smart AI voice assistant for local shops and businesses powered by Murf Falcon TTS and LiveKit Agents',
 
   supportsChatInput: true,
   supportsVideoInput: true,
@@ -44,10 +44,10 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   isPreConnectBufferEnabled: true,
 
   logo: '/murf-logo.svg',
-  accent: '#6366F1',
+  accent: '#10B981',
   logoDark: '/murf-logo-dark.svg',
-  accentDark: '#818cf8',
-  startButtonText: 'Start Conversation',
+  accentDark: '#34D399',
+  startButtonText: 'Start Voice Assistant',
 
   audioVisualizerType: 'wave',
   audioVisualizerWaveLineWidth: 3,

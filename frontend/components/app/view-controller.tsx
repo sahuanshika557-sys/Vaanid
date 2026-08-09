@@ -27,27 +27,31 @@ const VIEW_MOTION_PROPS = {
 function CallEndedView({ onRestart }: { onRestart: () => void }) {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center p-6 text-center">
-      <div className="mb-6 flex size-20 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-500">
+      <div className="mb-6 flex size-20 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 shadow-xl ring-8 ring-emerald-500/5">
         <svg
           className="size-10"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
+          strokeWidth="2.2"
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
         </svg>
       </div>
-      <h2 className="text-foreground text-2xl font-bold tracking-tight md:text-3xl">
+      <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">
+        <span className="size-1.5 rounded-full bg-emerald-400" />
+        <span>Session Completed</span>
+      </div>
+      <h2 className="text-foreground text-2xl font-extrabold tracking-tight md:text-3xl">
         Conversation ended
       </h2>
       <p className="text-muted-foreground mt-2 max-w-sm text-sm leading-relaxed">
-        Thank you for speaking with Anisha. You can start a new session anytime.
+        Need anything else? You can start a new voice session with Anisha anytime.
       </p>
       <Button
         size="lg"
         onClick={onRestart}
-        className="mt-8 rounded-full font-mono text-xs font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 sm:w-64"
+        className="mt-8 rounded-full bg-linear-to-r from-emerald-600 to-teal-600 px-8 py-6 text-xs font-bold tracking-wider text-white uppercase shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:scale-105 hover:from-emerald-500 hover:to-teal-500"
       >
         Start Again
       </Button>
@@ -65,7 +69,7 @@ function MicErrorView({
   const isBlocked = errorType === 'blocked';
   return (
     <div className="flex min-h-svh flex-col items-center justify-center p-6 text-center">
-      <div className="bg-destructive/10 text-destructive border-destructive/20 mb-6 flex size-20 items-center justify-center rounded-full border">
+      <div className="bg-destructive/10 text-destructive border-destructive/30 ring-destructive/5 mb-6 flex size-20 items-center justify-center rounded-full border shadow-xl ring-8">
         <svg
           className="size-10"
           fill="none"
@@ -76,22 +80,25 @@ function MicErrorView({
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z M3 3l18 18"
+            d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z M3 3l18 18"
           />
         </svg>
       </div>
-      <h2 className="text-foreground text-2xl font-bold tracking-tight md:text-3xl">
+      <div className="bg-destructive/10 text-destructive border-destructive/20 mb-2 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold">
+        <span>Permission Required</span>
+      </div>
+      <h2 className="text-foreground text-2xl font-extrabold tracking-tight md:text-3xl">
         {isBlocked ? 'Microphone access is blocked' : 'Microphone unavailable'}
       </h2>
       <p className="text-muted-foreground mt-2 max-w-md text-sm leading-relaxed">
         {isBlocked
-          ? 'Please allow microphone access in your browser settings and try again.'
-          : 'Could not detect a working microphone. Please connect a microphone and try again.'}
+          ? 'Please allow microphone access in your browser site settings (click the lock icon in the URL bar) and try again.'
+          : 'Could not detect a working microphone device. Please connect a microphone and try again.'}
       </p>
       <Button
         size="lg"
         onClick={onRetry}
-        className="mt-8 rounded-full font-mono text-xs font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 sm:w-64"
+        className="mt-8 rounded-full bg-linear-to-r from-emerald-600 to-teal-600 px-8 py-6 text-xs font-bold tracking-wider text-white uppercase shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:scale-105"
       >
         Try Again
       </Button>

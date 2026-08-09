@@ -37,6 +37,9 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
+# Database files
+*.db
+
 # Nested clone
 murf-ai/
 

@@ -53,10 +53,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // Generate participant token
-    const participantName = 'user';
-    const participantIdentity = `voice_assistant_user_${Math.floor(Math.random() * 10_000)}`;
-    const roomName = `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`;
+    // Generate participant token with stable customer identity
+    const customerId =
+      typeof body?.customer_id === 'string' && body.customer_id.trim().length > 0
+        ? body.customer_id.trim()
+        : `cust_anon_${Math.floor(Math.random() * 10_000)}`;
+
+    const participantName = 'Customer';
+    const participantIdentity = customerId;
+    const roomName = `local_commerce_room_${customerId}`;
 
     const participantToken = await createParticipantToken(
       { identity: participantIdentity, name: participantName },

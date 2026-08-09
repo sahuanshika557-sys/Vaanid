@@ -53,10 +53,36 @@ if ($isCloud) {
   Write-Warning "livekit-server was not found. Skipping local LiveKit startup and using your configured LIVEKIT_URL instead."
 }
 
+# Kill any stale node processes using port 3000
+try {
+  $connections = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
+  foreach ($conn in $connections) {
+    if ($conn.OwningProcess -gt 0) {
+      Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
+    }
+  }
+} catch {
+  # Ignore cleanup errors
+}
+
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$repoRoot\backend'; uv run python src/agent.py dev"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$repoRoot\frontend'; pnpm dev"
 
-Start-Sleep -Seconds 3
-Start-Process "http://localhost:3000"
+Write-Host "Waiting for frontend server to become ready on http://localhost:3000..."
+$ready = $false
+$attempts = 0
+while (-not $ready -and $attempts -lt 30) {
+  Start-Sleep -Seconds 2
+  $attempts++
+  try {
+    $response = Invoke-WebRequest -Uri "http://localhost:3000" -UseBasicParsing -TimeoutSec 2 -ErrorAction SilentlyContinue
+    if ($response -and $response.StatusCode -ge 200 -and $response.StatusCode -lt 400) {
+      $ready = $true
+    }
+  } catch {
+    # Server starting...
+  }
+}
 
-Write-Host "Started backend and frontend in separate PowerShell windows. Opening http://localhost:3000 in browser..."
+Start-Process "http://localhost:3000"
+Write-Host "Started backend and frontend. Opening http://localhost:3000 in browser..."

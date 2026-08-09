@@ -131,22 +131,45 @@ pnpm format
 pnpm build
 ```
 
+## 🧠 Day 4 — Persistent Customer Memory
+
+The voice agent is powered by **REAL Persistent Customer Memory** using SQLite (`local_commerce_memory.db`), enabling memory to survive call terminations, agent restarts, backend restarts, and browser reloads:
+
+- **SQLite Database Layer**: `customers` table storing `user_id` (PRIMARY KEY), `name`, `language_preference`, `preferred_delivery_slot`, `usual_quantity`, `past_orders`, `last_interaction`, `created_at`, and `updated_at`. Uses parameterized SQL queries exclusively.
+- **Stable Customer Identity**: Frontend generates and persists a stable client-side customer ID (`local_commerce_customer_id`) in browser `localStorage`. Passed as `participantIdentity` to LiveKit so the same caller is recognized across all calls.
+- **3 Agent Tools (`@function_tool`)**:
+  1. `lookup_caller`: Retrieves saved customer memory (`name`, `language_preference`, `preferred_delivery_slot`, `usual_quantity`, `past_orders`, `last_interaction`).
+  2. `save_caller_memory`: Saves caller memory AFTER explicit user consent (`"Would you like me to remember that...?"` → `"Yes"`).
+  3. `forget_caller`: Deletes caller memory when requested (`"Forget everything about me"`).
+- **Mandatory Consent Workflow**: The agent ALWAYS asks for permission before saving any personal fact or preference. Supports English (*"Yes, remember it"*), Hindi (*"हाँ, याद रखना"*), and Hinglish (*"Haan, yaad rakhna"*).
+- **Personalized Returning Customer Experience**:
+  - **New Customer**: *"Hi! I'm Anisha, your local shopping assistant. How can I help you today?"*
+  - **Returning Customer**: *"नमस्ते Ramesh जी! वापस स्वागत है। आज मैं आपकी कैसे मदद कर सकती हूँ?"*
+- **Privacy & Safety**: Never stores passwords, OTPs, credit cards, or payment credentials. Memory never overrides Day 2 guardrails (never falsely confirms orders or refunds).
+- **Automated Tests**: Unit tests in `backend/tests/test_memory.py` covering table creation, customer CRUD, timestamp updates, consent scenarios, and persistence across connections (`uv run pytest tests/test_memory.py`).
+
 ---
 
-## 🎨 Day 3 — Personalized Voice Agent Frontend
+## 🛍️ Day 3 — Personalized Local Commerce AI Voice Agent Frontend
 
-The frontend is fully personalized for **Anisha — Murf AI Voice Support Assistant**, providing a state-of-the-art voice agent user experience:
+The frontend has been completely upgraded and personalized for the **LOCAL COMMERCE** track (**Dukandar AI — Local Commerce Voice Assistant**), providing a voice-first local shopping assistant experience:
 
-- **Agent Identity**: **Anisha**, AI Customer Support Representative for Murf AI voice services (powered by Murf Falcon TTS voice `Anisha`).
-- **5 Required Agent States**:
-  1. **READY**: Landing view featuring Anisha's avatar badge, language support tag (**English • Hindi • Hinglish**), clear service description, and a prominent **Start Conversation** primary button.
-  2. **CONNECTING**: Animated loading spinner with text *"Connecting to Anisha..."* and disabled action state to prevent duplicate connections.
-  3. **LISTENING**: Explicit top status badge displaying *"Listening to you"* with a pulsing emerald microphone indicator.
-  4. **SPEAKING**: Explicit top status badge displaying *"Anisha is speaking"* with an active indigo sound wave indicator.
-  5. **CALL ENDED**: Clean post-call screen showing *"Conversation ended"* and a **Start Again** action button that enables instant re-connection without reloading the page.
-- **Microphone Permission Handling**: Gracefully intercepts browser microphone permission blocks or missing devices to display clear, friendly recovery instructions (*"Microphone access is blocked. Please allow microphone access in your browser settings and try again."*) with a **Try Again** button.
-- **Live Transcript & Controls**: Includes real-time chat transcript toggle, audio wave visualizers, microphone toggle, and end call button.
-- **Responsive Layout**: Designed for seamless usage across Mobile (390px), Tablet (768px), Laptop (1280px), and Desktop (1440px) without horizontal scrolling or text overflow.
+- **Product Concept**: A smart AI voice assistant helping local customers interact with local shops and businesses (product questions, shop details, hours, local services, and support).
+- **Five Agent States**:
+  1. **READY**: Prominent hero section, interactive central AI assistant card with breathing avatar pulse, language badge (`English • Hindi • Hinglish`), capability cards, and a primary **Start Voice Assistant** button.
+  2. **CONNECTING**: Rotating loading indicator with status *"Connecting..."* and disabled action button to prevent duplicate connections.
+  3. **LISTENING**: Top status badge displaying `🎤 Listening to you` with dynamic microphone pulse and organic voice visualizer bars.
+  4. **SPEAKING**: Top status badge displaying `🔊 Your assistant is speaking` with dynamic animated waveform.
+  5. **CALL ENDED**: Clean post-call screen displaying *"Conversation ended"* and a **Start Again** action button that resets session state without a browser refresh.
+- **Microphone Error Handling**: Friendly error card for `NotAllowedError` / `NotFoundError` displaying step-by-step browser permission instructions (*"Please allow microphone access in your browser settings and try again."*) with a **Try Again** button.
+- **Local Commerce Visual Sections**:
+  - 🛍️ **Product Questions**: Ask about local shop products, services, and availability.
+  - 🏪 **Shop Information**: Inquire about business address, operating hours, and contact info.
+  - 📦 **Order Assistance**: Guidance on orders when store data is available.
+  - 💬 **Customer Support**: Seamless escalation to human support when needed.
+- **Trust & Guardrails**: Highlights Day 2 guardrails (verifiable store data, zero false order/refund confirmations, transparent escalation).
+- **Multi-lingual Voice**: Seamless English, Hindi, and Hinglish support matching Day 2 capabilities.
+- **Responsive & Accessible**: Fully responsive layout across Desktop (1440px), Laptop (1280px), Tablet (768px), and Mobile (390px) with semantic HTML, focus states, and `prefers-reduced-motion` support.
 
 ---
 

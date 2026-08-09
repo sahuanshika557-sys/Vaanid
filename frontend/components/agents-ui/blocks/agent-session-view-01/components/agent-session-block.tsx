@@ -156,22 +156,22 @@ export interface AgentSessionView_01Props {
 }
 
 function AgentStatusHeader({ agentState }: { agentState?: string }) {
-  let badgeColor = 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400';
+  let badgeColor = 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
   let dotColor = 'bg-emerald-400 animate-pulse';
-  let label = 'Listening to you';
+  let label = '🎤 Listening to you';
 
   if (agentState === 'speaking') {
-    badgeColor = 'border-indigo-500/20 bg-indigo-500/10 text-indigo-400';
+    badgeColor = 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400';
     dotColor = 'bg-indigo-400 animate-bounce';
-    label = 'Anisha is speaking';
+    label = '🔊 Your assistant is speaking';
   } else if (agentState === 'thinking') {
-    badgeColor = 'border-amber-500/20 bg-amber-500/10 text-amber-400';
+    badgeColor = 'border-amber-500/30 bg-amber-500/10 text-amber-400';
     dotColor = 'bg-amber-400 animate-ping';
-    label = 'Anisha is thinking...';
+    label = '💭 Anisha is thinking...';
   } else if (agentState === 'connecting' || agentState === 'initializing') {
-    badgeColor = 'border-blue-500/20 bg-blue-500/10 text-blue-400';
+    badgeColor = 'border-blue-500/30 bg-blue-500/10 text-blue-400';
     dotColor = 'bg-blue-400 animate-spin';
-    label = 'Connecting to Anisha...';
+    label = '⚡ Connecting to voice assistant...';
   }
 
   return (
@@ -190,7 +190,7 @@ function AgentStatusHeader({ agentState }: { agentState?: string }) {
 }
 
 export function AgentSessionView_01({
-  preConnectMessage = 'Anisha is listening, ask her a question',
+  preConnectMessage = 'Anisha is listening, ask about products, shop info, or local services',
   supportsChatInput = true,
   supportsVideoInput = true,
   supportsScreenShare = true,

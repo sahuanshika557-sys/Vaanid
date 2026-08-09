@@ -123,3 +123,47 @@ export function getSandboxTokenSource(appConfig: AppConfig) {
     }
   });
 }
+
+/**
+ * Retrieve or generate a stable customer ID stored in localStorage.
+ */
+export function getOrCreateCustomerId(): string {
+  if (typeof window === 'undefined') return 'cust_default';
+  let customerId = localStorage.getItem('local_commerce_customer_id');
+  if (!customerId) {
+    customerId = `cust_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+    localStorage.setItem('local_commerce_customer_id', customerId);
+  }
+  return customerId;
+}
+
+/**
+ * Get a token source for LiveKit session with persistent customer_id
+ */
+export function getCustomTokenSource(appConfig: AppConfig) {
+  return TokenSource.custom(async () => {
+    const customerId = getOrCreateCustomerId();
+    const roomConfig = appConfig.agentName
+      ? {
+          agents: [{ agent_name: appConfig.agentName }],
+        }
+      : undefined;
+
+    try {
+      const res = await fetch('/api/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer_id: customerId,
+          room_config: roomConfig,
+        }),
+      });
+      return await res.json();
+    } catch (error) {
+      console.error('Error fetching token details:', error);
+      throw new Error('Error fetching token details!');
+    }
+  });
+}
