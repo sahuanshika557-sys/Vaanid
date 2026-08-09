@@ -42,13 +42,21 @@ export async function POST(req: Request) {
     // Parse room config from request body (if provided).
     const body = await req.json().catch(() => ({}));
     let roomConfig: RoomConfiguration | undefined;
+    const effectiveAgentName = AGENT_NAME || process.env.AGENT_NAME || 'Indiabuddy';
+
     if (body?.room_config) {
       roomConfig = RoomConfiguration.fromJson(body.room_config, { ignoreUnknownFields: true });
-    } else if (AGENT_NAME) {
-      // When AGENT_NAME is set, configure explicit agent dispatch so the named
-      // agent worker picks up the job when a user joins the room.
+    }
+
+    if (
+      !roomConfig ||
+      !roomConfig.agents ||
+      roomConfig.agents.length === 0 ||
+      !roomConfig.agents[0].agentName
+    ) {
+      // Configure explicit agent dispatch so the named agent worker picks up the job when a user joins
       roomConfig = RoomConfiguration.fromJson(
-        { agents: [{ agentName: AGENT_NAME }] },
+        { agents: [{ agentName: effectiveAgentName }] },
         { ignoreUnknownFields: true }
       );
     }

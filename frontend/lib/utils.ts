@@ -101,7 +101,7 @@ export function getSandboxTokenSource(appConfig: AppConfig) {
     const sandboxId = appConfig.sandboxId ?? '';
     const roomConfig = appConfig.agentName
       ? {
-          agents: [{ agent_name: appConfig.agentName }],
+          agents: [{ agentName: appConfig.agentName }],
         }
       : undefined;
 
@@ -145,7 +145,7 @@ export function getCustomTokenSource(appConfig: AppConfig) {
     const customerId = getOrCreateCustomerId();
     const roomConfig = appConfig.agentName
       ? {
-          agents: [{ agent_name: appConfig.agentName }],
+          agents: [{ agentName: appConfig.agentName }],
         }
       : undefined;
 
