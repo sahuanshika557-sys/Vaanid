@@ -171,7 +171,11 @@ class Assistant(Agent):
         return {"success": False, "message": "Unable to remove customer memory."}
 
 
-server = AgentServer(port=0, load_threshold=10.0, load_fnc=lambda *args: 0.0)
+def zero_load(*args, **kwargs) -> float:
+    return 0.0
+
+
+server = AgentServer(port=0, load_threshold=10.0, load_fnc=zero_load)
 
 
 def prewarm(proc: JobProcess):
