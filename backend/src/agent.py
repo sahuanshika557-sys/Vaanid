@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 
@@ -28,6 +29,17 @@ from livekit.plugins.turn_detector.multilingual import MultilingualModel
 logger = logging.getLogger("agent")
 
 load_dotenv(".env.local")
+
+
+async def get_caller_identity(ctx: JobContext) -> str:
+    """Safely retrieve connected participant identity without blocking indefinitely."""
+    for _ in range(10):
+        if ctx.room and ctx.room.remote_participants:
+            p = next(iter(ctx.room.remote_participants.values()), None)
+            if p and p.identity:
+                return p.identity
+        await asyncio.sleep(0.2)
+    return "cust_default"
 
 # Change this prompt to change what your voice agent does.
 # See README.md for example prompts (customer support, language tutor, receptionist).
@@ -221,9 +233,8 @@ async def my_agent(ctx: JobContext):
     # Join the room and connect to the user
     await ctx.connect()
 
-    # Wait for participant to join and set user_id
-    participant = await ctx.wait_for_participant()
-    user_id = participant.identity if participant else "cust_default"
+    # Get caller identity safely without blocking room initialization
+    user_id = await get_caller_identity(ctx)
     assistant.user_id = user_id
 
     # Retrieve memory if returning customer
