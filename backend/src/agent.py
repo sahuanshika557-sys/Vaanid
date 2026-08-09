@@ -84,27 +84,29 @@ VOICE-FIRST RESPONSE STYLE:
 
 
 class Assistant(Agent):
-    def __init__(self) -> None:
+    def __init__(self, user_id: str = "cust_default") -> None:
+        self.user_id = user_id
         super().__init__(instructions=SYSTEM_PROMPT)
 
     @function_tool
-    async def lookup_caller(self, context: RunContext, user_id: str) -> dict:
+    async def lookup_caller(self, context: RunContext, user_id: str | None = None) -> dict:
         """Look up a caller's saved customer memory (name, language preference, preferred delivery slot, usual quantity, past orders, last interaction).
 
         Args:
-            user_id: The unique customer ID of the caller.
+            user_id: The unique customer ID of the caller (optional).
         """
-        logger.info(f"Looking up customer memory for '{user_id}'")
-        cust = get_customer(user_id)
+        target_id = user_id or self.user_id
+        logger.info(f"Looking up customer memory for '{target_id}'")
+        cust = get_customer(target_id)
         if cust:
             return {"found": True, **cust}
-        return {"found": False, "user_id": user_id}
+        return {"found": False, "user_id": target_id}
 
     @function_tool
     async def save_caller_memory(
         self,
         context: RunContext,
-        user_id: str,
+        user_id: str | None = None,
         name: str | None = None,
         language_preference: str | None = None,
         preferred_delivery_slot: str | None = None,
@@ -114,17 +116,18 @@ class Assistant(Agent):
         """Save or update customer memory AFTER receiving explicit user consent ("Would you like me to remember...?" -> "Yes").
 
         Args:
-            user_id: The unique customer ID.
+            user_id: The unique customer ID (optional).
             name: The customer's preferred name.
             language_preference: Preferred language (e.g. English, Hindi, Hinglish).
             preferred_delivery_slot: Preferred delivery time slot (e.g. Morning, Evening).
             usual_quantity: Typical quantity ordered (e.g. 5 kg, 2 L).
             past_orders: Summary of past verified orders.
         """
-        logger.info(f"Saving customer memory for '{user_id}'")
+        target_id = user_id or self.user_id
+        logger.info(f"Saving customer memory for '{target_id}'")
         try:
             res = update_customer(
-                user_id=user_id,
+                user_id=target_id,
                 name=name,
                 language_preference=language_preference,
                 preferred_delivery_slot=preferred_delivery_slot,
@@ -138,18 +141,19 @@ class Assistant(Agent):
                 }
             return {"success": False, "message": "Unable to save customer memory."}
         except Exception as e:
-            logger.error(f"Failed to save customer memory for '{user_id}': {e}")
+            logger.error(f"Failed to save customer memory for '{target_id}': {e}")
             return {"success": False, "message": "Error saving customer memory."}
 
     @function_tool
-    async def forget_caller(self, context: RunContext, user_id: str) -> dict:
+    async def forget_caller(self, context: RunContext, user_id: str | None = None) -> dict:
         """Delete all saved memory for a customer when they explicitly ask to be forgotten ("Forget everything about me").
 
         Args:
-            user_id: The unique customer ID.
+            user_id: The unique customer ID (optional).
         """
-        logger.info(f"Deleting customer memory for '{user_id}'")
-        success = delete_customer(user_id)
+        target_id = user_id or self.user_id
+        logger.info(f"Deleting customer memory for '{target_id}'")
+        success = delete_customer(target_id)
         if success:
             return {"success": True, "message": "Customer memory removed."}
         return {"success": False, "message": "Unable to remove customer memory."}
@@ -179,6 +183,8 @@ async def my_agent(ctx: JobContext):
     # Ensure SQLite database is initialized
     init_db()
 
+    assistant = Assistant()
+
     # Set up a voice AI pipeline using Murf Falcon, Gemini, Deepgram, and the LiveKit turn detector
     session = AgentSession(
         stt=deepgram.STT(model="nova-3"),
@@ -198,7 +204,7 @@ async def my_agent(ctx: JobContext):
     )
 
     await session.start(
-        agent=Assistant(),
+        agent=assistant,
         room=ctx.room,
         room_options=room_io.RoomOptions(
             audio_input=room_io.AudioInputOptions(
@@ -215,9 +221,10 @@ async def my_agent(ctx: JobContext):
     # Join the room and connect to the user
     await ctx.connect()
 
-    # Identify caller identity from participant
-    participant = next(iter(ctx.room.remote_participants.values()), None)
+    # Wait for participant to join and set user_id
+    participant = await ctx.wait_for_participant()
     user_id = participant.identity if participant else "cust_default"
+    assistant.user_id = user_id
 
     # Retrieve memory if returning customer
     cust = get_customer(user_id)
