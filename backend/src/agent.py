@@ -171,7 +171,7 @@ class Assistant(Agent):
         return {"success": False, "message": "Unable to remove customer memory."}
 
 
-server = AgentServer()
+server = AgentServer(load_threshold=1.0)
 
 
 def prewarm(proc: JobProcess):
