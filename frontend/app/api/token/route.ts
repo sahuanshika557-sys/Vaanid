@@ -61,7 +61,7 @@ export async function POST(req: Request) {
 
     const participantName = 'Customer';
     const participantIdentity = customerId;
-    const roomName = `local_commerce_room_${customerId}`;
+    const roomName = `local_commerce_room_${customerId}_${Date.now()}`;
 
     const participantToken = await createParticipantToken(
       { identity: participantIdentity, name: participantName },
