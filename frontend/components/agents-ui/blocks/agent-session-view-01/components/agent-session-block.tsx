@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { RoomEvent } from 'livekit-client';
 import { AnimatePresence, type MotionProps, motion } from 'motion/react';
 import { useAgent, useSessionContext, useSessionMessages } from '@livekit/components-react';
 import { AgentChatTranscript } from '@/components/agents-ui/agent-chat-transcript';
@@ -8,6 +9,7 @@ import {
   AgentControlBar,
   type AgentControlBarControls,
 } from '@/components/agents-ui/agent-control-bar';
+import { DebugPanel } from '@/components/agents-ui/debug-panel';
 import { Shimmer } from '@/components/ai-elements/shimmer';
 import { cn } from '@/lib/shadcn/utils';
 import { TileLayout } from './tile-view';
@@ -101,61 +103,21 @@ export function Fade({ top = false, bottom = false, className }: FadeProps) {
   );
 }
 
-export interface AgentSessionView_01Props {
-  /**
-   * Message shown above the controls before the first chat message is sent.
-   *
-   * @default 'Agent is listening, ask it a question'
-   */
-  preConnectMessage?: string;
-  /**
-   * Enables or disables the chat toggle and transcript input controls.
-   *
-   * @default true
-   */
-  supportsChatInput?: boolean;
-  /**
-   * Enables or disables camera controls in the bottom control bar.
-   *
-   * @default true
-   */
-  supportsVideoInput?: boolean;
-  /**
-   * Enables or disables screen sharing controls in the bottom control bar.
-   *
-   * @default true
-   */
-  supportsScreenShare?: boolean;
-  /**
-   * Shows a pre-connect buffer state with a shimmer message before messages appear.
-   *
-   * @default true
-   */
-  isPreConnectBufferEnabled?: boolean;
-
-  /** Selects the visualizer style rendered in the main tile area. */
-  audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
-  /** Primary hex color used by supported audio visualizer variants. */
-  audioVisualizerColor?: `#${string}`;
-  /** Hue shift intensity used by certain visualizers. */
-  audioVisualizerColorShift?: number;
-  /** Number of bars to render when `audioVisualizerType` is `bar`. */
-  audioVisualizerBarCount?: number;
-  /** Number of rows in the visualizer when `audioVisualizerType` is `grid`. */
-  audioVisualizerGridRowCount?: number;
-  /** Number of columns in the visualizer when `audioVisualizerType` is `grid`. */
-  audioVisualizerGridColumnCount?: number;
-  /** Number of radial bars when `audioVisualizerType` is `radial`. */
-  audioVisualizerRadialBarCount?: number;
-  /** Base radius of the radial visualizer when `audioVisualizerType` is `radial`. */
-  audioVisualizerRadialRadius?: number;
-  /** Stroke width of the wave path when `audioVisualizerType` is `wave`. */
-  audioVisualizerWaveLineWidth?: number;
-  /** Optional class name merged onto the outer `<section>` container. */
-  className?: string;
+interface CatalogueInfo {
+  status: 'checking' | 'found' | 'error';
+  title?: string;
+  priceInfo?: string;
+  stockInfo?: string;
+  errorMessage?: string;
 }
 
-function AgentStatusHeader({ agentState }: { agentState?: string }) {
+function AgentStatusHeader({
+  agentState,
+  catalogueInfo,
+}: {
+  agentState?: string;
+  catalogueInfo?: CatalogueInfo | null;
+}) {
   let badgeColor = 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
   let dotColor = 'bg-emerald-400 animate-pulse';
   let label = '🎤 Listening to you';
@@ -167,7 +129,10 @@ function AgentStatusHeader({ agentState }: { agentState?: string }) {
   } else if (agentState === 'thinking') {
     badgeColor = 'border-amber-500/30 bg-amber-500/10 text-amber-400';
     dotColor = 'bg-amber-400 animate-ping';
-    label = '💭 Anisha is thinking...';
+    label =
+      catalogueInfo?.status === 'checking'
+        ? '🔎 Checking catalogue...'
+        : '💭 Anisha is thinking...';
   } else if (agentState === 'connecting' || agentState === 'initializing') {
     badgeColor = 'border-blue-500/30 bg-blue-500/10 text-blue-400';
     dotColor = 'bg-blue-400 animate-spin';
@@ -175,7 +140,7 @@ function AgentStatusHeader({ agentState }: { agentState?: string }) {
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-4 z-[60] flex items-center justify-center md:top-6">
+    <div className="pointer-events-none absolute inset-x-0 top-4 z-[60] flex flex-col items-center gap-2 md:top-6">
       <div
         className={cn(
           'inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold tracking-wide shadow-lg backdrop-blur-md transition-all duration-300',
@@ -185,6 +150,48 @@ function AgentStatusHeader({ agentState }: { agentState?: string }) {
         <span className={cn('size-2 rounded-full', dotColor)} />
         <span>{label}</span>
       </div>
+
+      {/* Catalogue Tool Activity Card */}
+      <AnimatePresence>
+        {catalogueInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="border-border/60 bg-background/80 pointer-events-auto max-w-sm rounded-xl border px-4 py-2.5 shadow-xl backdrop-blur-md"
+          >
+            {catalogueInfo.status === 'checking' && (
+              <div className="flex items-center gap-2 text-xs font-medium text-amber-400">
+                <span className="size-2 animate-ping rounded-full bg-amber-400" />
+                <span>🔎 Checking catalogue...</span>
+              </div>
+            )}
+            {catalogueInfo.status === 'found' && (
+              <div className="flex flex-col gap-0.5 text-xs">
+                <div className="flex items-center gap-1.5 font-bold text-emerald-400">
+                  <span>📦 Product Found</span>
+                </div>
+                <div className="text-foreground font-semibold">{catalogueInfo.title}</div>
+                {catalogueInfo.priceInfo && (
+                  <div className="text-muted-foreground">{catalogueInfo.priceInfo}</div>
+                )}
+                {catalogueInfo.stockInfo && (
+                  <div className="text-xs font-medium text-emerald-500">
+                    {catalogueInfo.stockInfo}
+                  </div>
+                )}
+              </div>
+            )}
+            {catalogueInfo.status === 'error' && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-rose-400">
+                <span>⚠️</span>
+                <span>{catalogueInfo.errorMessage || 'Catalogue temporarily unavailable'}</span>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -214,6 +221,7 @@ export function AgentSessionView_01({
   const [chatOpen, setChatOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { state: agentState } = useAgent();
+  const [catalogueInfo, setCatalogueInfo] = useState<CatalogueInfo | null>(null);
 
   const controls: AgentControlBarControls = {
     leave: true,
@@ -222,6 +230,83 @@ export function AgentSessionView_01({
     camera: supportsVideoInput,
     screenShare: supportsScreenShare,
   };
+
+  // Set checking state when agent is thinking & log pipeline transitions
+  useEffect(() => {
+    if (agentState === 'listening') {
+      console.log('[VOICE_PIPELINE] USER_SPEECH_DETECTED: Agent is listening to audio input.');
+    } else if (agentState === 'thinking') {
+      console.log('[VOICE_PIPELINE] STT_STARTED / THINKING: Processing transcript & LLM decision.');
+      if (!catalogueInfo) {
+        setCatalogueInfo({ status: 'checking' });
+      }
+    } else if (agentState === 'speaking') {
+      console.log('[VOICE_PIPELINE] TTS_STARTED & TTS_AUDIO_RECEIVED: Playing agent audio output.');
+      const timer = setTimeout(() => {
+        setCatalogueInfo(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [agentState, catalogueInfo]);
+
+  // Log user transcript reception
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.from?.isAgent === false && lastMsg.message) {
+        console.log('[VOICE_PIPELINE] USER_TRANSCRIPT_RECEIVED:', lastMsg.message);
+      }
+    }
+  }, [messages]);
+
+  // Listen to LiveKit data channel events for catalogue_status
+  useEffect(() => {
+    const room = session.room;
+    if (!room) return;
+
+    const handleDataReceived = (
+      payload: Uint8Array,
+      participant?: unknown,
+      kind?: unknown,
+      topic?: string
+    ) => {
+      if (topic === 'catalogue_status') {
+        try {
+          const strVal = new TextDecoder().decode(payload);
+          const parsed = JSON.parse(strVal);
+          const data = parsed.data;
+
+          if (data && data.found) {
+            setCatalogueInfo({
+              status: 'found',
+              title: data.product_name,
+              priceInfo: `₹${data.price} / ${data.unit}`,
+              stockInfo: data.stock_status,
+            });
+          } else if (data && data.success && data.items) {
+            setCatalogueInfo({
+              status: 'found',
+              title: `Estimated Total: ₹${data.total}`,
+              priceInfo: `${data.items.length} item(s) calculated`,
+              stockInfo: 'Order calculation completed',
+            });
+          } else if (data && (!data.success || data.error)) {
+            setCatalogueInfo({
+              status: 'error',
+              errorMessage: data.message || 'Catalogue temporarily unavailable',
+            });
+          }
+        } catch (err) {
+          console.warn('Failed to parse catalogue_status event:', err);
+        }
+      }
+    };
+
+    room.on(RoomEvent.DataReceived, handleDataReceived);
+    return () => {
+      room.off(RoomEvent.DataReceived, handleDataReceived);
+    };
+  }, [session.room]);
 
   useEffect(() => {
     const lastMessage = messages.at(-1);
@@ -238,7 +323,8 @@ export function AgentSessionView_01({
       className={cn('bg-background relative z-10 h-full w-full overflow-hidden', className)}
       {...props}
     >
-      <AgentStatusHeader agentState={agentState} />
+      <AgentStatusHeader agentState={agentState} catalogueInfo={catalogueInfo} />
+
       <Fade top className="absolute inset-x-4 top-0 z-10 h-40" />
       {/* transcript */}
 
@@ -305,6 +391,7 @@ export function AgentSessionView_01({
           />
         </div>
       </motion.div>
+      <DebugPanel />
     </section>
   );
 }

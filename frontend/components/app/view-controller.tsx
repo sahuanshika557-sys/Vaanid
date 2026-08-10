@@ -135,13 +135,35 @@ export function ViewController({ appConfig }: ViewControllerProps) {
     setMicError(null);
     setHasEnded(false);
 
+    console.log(
+      '[VOICE_PIPELINE] MICROPHONE_PERMISSION: Requesting mic permissions & starting session...'
+    );
+
     try {
-      start();
+      await start({
+        tracks: {
+          microphone: {
+            enabled: true,
+          },
+        },
+      });
+      console.log('[VOICE_PIPELINE] LIVEKIT_CONNECTED: Voice session start succeeded.');
     } catch (err: unknown) {
-      const error = err as { name?: string };
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+      console.error('[VOICE_PIPELINE] MICROPHONE_ERROR:', err);
+      const error = err as { name?: string; message?: string };
+      if (
+        error.name === 'NotAllowedError' ||
+        error.name === 'PermissionDeniedError' ||
+        error.message?.toLowerCase().includes('permission') ||
+        error.message?.toLowerCase().includes('denied') ||
+        error.message?.toLowerCase().includes('blocked')
+      ) {
         setMicError('blocked');
-      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+      } else if (
+        error.name === 'NotFoundError' ||
+        error.name === 'DevicesNotFoundError' ||
+        error.message?.toLowerCase().includes('not found')
+      ) {
         setMicError('not_found');
       } else {
         setMicError('generic');

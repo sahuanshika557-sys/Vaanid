@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+
 import pytest
 
 from database.memory import (
@@ -17,9 +18,8 @@ from database.memory import (
 @pytest.fixture
 def temp_db():
     """Fixture providing a temporary SQLite database path."""
-    tf = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-    db_path = tf.name
-    tf.close()
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tf:
+        db_path = tf.name
     init_db(db_path)
     yield db_path
     try:

@@ -1,0 +1,21 @@
+product_id,product_name,category,description,price,currency,stock_quantity,unit,seller_name,location,last_updated
+P001,Basmati Rice,Groceries,Premium long-grain basmati rice,320,INR,25,5 kg,Local Fresh Mart,Kanpur,2026-08-10T10:00:00+05:30
+P002,Fortune Sunflower Oil,Groceries,Refined sunflower cooking oil,165,INR,15,1 L,Local Fresh Mart,Kanpur,2026-08-10T10:00:00+05:30
+P003,Dabur Mustard Oil,Groceries,Kachi ghani pure mustard oil,180,INR,10,1 L,Local Fresh Mart,Kanpur,2026-08-10T10:00:00+05:30
+P004,Aashirvaad Whole Wheat Atta,Groceries,100% pure MP chakki atta,240,INR,3,5 kg,Local Fresh Mart,Kanpur,2026-08-10T10:00:00+05:30
+P005,Toor Dal,Groceries,Unpolished premium toor dal,140,INR,0,1 kg,Local Fresh Mart,Kanpur,2026-08-10T10:00:00+05:30
+P006,Fresh Alphonso Mangoes,Fruits,Handpicked sweet Ratnagiri mangoes,450,INR,12,1 dozen,Green Orchard,Kanpur,2026-08-10T09:30:00+05:30
+P007,Shimla Apples,Fruits,Crisp red royal apples,180,INR,20,1 kg,Green Orchard,Kanpur,2026-08-10T09:30:00+05:30
+P008,Fresh Farm Bananas,Fruits,Robusta yellow sweet bananas,60,INR,30,1 dozen,Green Orchard,Kanpur,2026-08-10T09:30:00+05:30
+P009,Organic Tomatoes,Vegetables,Farm fresh red tomatoes,40,INR,4,1 kg,Sabzi Mandi Express,Kanpur,2026-08-10T08:00:00+05:30
+P010,Fresh Onions,Vegetables,Nashik red onions,35,INR,50,1 kg,Sabzi Mandi Express,Kanpur,2026-08-10T08:00:00+05:30
+P011,Fresh Potatoes,Vegetables,New crop Jyoti potatoes,30,INR,40,1 kg,Sabzi Mandi Express,Kanpur,2026-08-10T08:00:00+05:30
+P012,Vim Liquid Dishwash,Household,Lemon dishwash gel with power of 100 lemons,115,INR,18,500 ml,Kanpur Superstore,Kanpur,2026-08-10T10:00:00+05:30
+P013,Surf Excel Easy Wash,Household,Detergent powder for stain removal,140,INR,15,1 kg,Kanpur Superstore,Kanpur,2026-08-10T10:00:00+05:30
+P014,Dettol Liquid Handwash,Personal Care,Original germ protection handwash refill,99,INR,2,750 ml,Kanpur Superstore,Kanpur,2026-08-10T10:00:00+05:30
+P015,Dove Cream Beauty Bathing Soap,Personal Care,Moisturizing bathing soap 3-pack,160,INR,0,3x100 g,Kanpur Superstore,Kanpur,2026-08-10T10:00:00+05:30
+P016,Haldiram Bhujia Sev,Snacks,Crispy spicy gram flour snack,110,INR,22,400 g,Snack Corner,Kanpur,2026-08-10T10:00:00+05:30
+P017,Lays Classic Salted Potato Chips,Snacks,Crispy salted potato chips pack,30,INR,35,90 g,Snack Corner,Kanpur,2026-08-10T10:00:00+05:30
+P018,Amul Taaza Toned Milk,Beverages,Homogenised toned milk pouch,30,INR,40,500 ml,Amul Parlour,Kanpur,2026-08-10T07:00:00+05:30
+P019,Tata Tea Gold,Beverages,Rich aromatic CTC leaf black tea,280,INR,14,500 g,Kanpur Superstore,Kanpur,2026-08-10T10:00:00+05:30
+P020,Fresh Whole Wheat Bread,Bakery,Soft sliced whole wheat sandwich bread,45,INR,2,400 g,Daily Bakery,Kanpur,2026-08-10T07:30:00+05:30

@@ -133,8 +133,8 @@ def update_customer(
     updates["updated_at"] = now
     updates["last_interaction"] = now
 
-    set_clause = ", ".join(f"{field} = ?" for field in updates.keys())
-    values = list(updates.values()) + [user_id]
+    set_clause = ", ".join(f"{field} = ?" for field in updates)
+    values = [*list(updates.values()), user_id]
 
     try:
         with get_connection(db_path) as conn:

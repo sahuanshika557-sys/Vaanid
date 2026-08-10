@@ -150,6 +150,24 @@ The voice agent is powered by **REAL Persistent Customer Memory** using SQLite (
 
 ---
 
+## 🌐 Multilingual Voice Support (Hindi + Hinglish + English)
+
+The agent detects and responds according to the user's current language/register and can switch languages during the same call without restarting or manual toggles.
+
+### Key Capabilities
+- **Supported Languages & Registers**:
+  - **English**: *"How much is basmati rice?"* → *"Basmati Rice 5 kg pack is listed at ₹320 with 25 units available."*
+  - **Hinglish / Roman Hindi**: *"Basmati rice kitne ka hai?"* → *"Basmati rice ka listed price ₹320 hai."*
+  - **Hindi (Devanagari)**: *"बासमती चावल कितने के हैं?"* → *"बासमती चावल की सूचीबद्ध कीमत ₹320 है।"*
+  - **Mixed Code-Switching**: *"Can you check kar sakte ho basmati rice price?"* → Mirrors mixed register naturally.
+- **Speech Recognition (STT)**: Configured with **Deepgram Nova-3** (`language="multi"`, `detect_language=True`) for multi-language speech recognition.
+- **Text-to-Speech (TTS)**: Powered by **Murf Falcon** (`Anisha`, `en-IN` / `hi-IN` capabilities) for natural voice synthesis across English, Hindi, and Hinglish.
+- **Language Mirroring**: Automatically matches the user's latest utterance language, script, and formality. Current utterance always overrides stored customer memory language preferences.
+- **Tool & Guardrail Integration**: Function tools (`lookup_product`, `calculate_order_total`) and refusal guardrails operate language-independently across English, Hindi, and Hinglish.
+- **Unclear Speech Fallback**: Gracefully asks for clarification in the user's active language (*"Sorry, mujhe clear nahi suna. Ek baar phir bata sakte ho?"*).
+
+---
+
 ## 🛍️ Day 3 — Personalized Local Commerce AI Voice Agent Frontend
 
 The frontend has been completely upgraded and personalized for the **LOCAL COMMERCE** track (**Dukandar AI — Local Commerce Voice Assistant**), providing a voice-first local shopping assistant experience:
@@ -170,6 +188,81 @@ The frontend has been completely upgraded and personalized for the **LOCAL COMME
 - **Trust & Guardrails**: Highlights Day 2 guardrails (verifiable store data, zero false order/refund confirmations, transparent escalation).
 - **Multi-lingual Voice**: Seamless English, Hindi, and Hinglish support matching Day 2 capabilities.
 - **Responsive & Accessible**: Fully responsive layout across Desktop (1440px), Laptop (1280px), Tablet (768px), and Mobile (390px) with semantic HTML, focus states, and `prefers-reduced-motion` support.
+
+---
+
+## 🛒 Day 5 — Real-Time Tools for Local Commerce Voice Agent
+
+Day 5 connects the Local Commerce Voice Assistant (**Dukandar AI**) to **REAL DOMAIN DATA** through real-time function tools (`lookup_product` and `calculate_order_total`).
+
+### 1. Data Source Disclosure
+> [!IMPORTANT]
+> **DATA SOURCE**: Product catalogue data is **local/static test data** stored in `data/products.csv` and `backend/data/products.csv`. The assistant clearly communicates this local data context and never claims to fetch live unverified market data.
+
+### 2. Dataset Schema (`data/products.csv`)
+The catalogue contains 20 realistic items across 8 categories (Groceries, Fruits, Vegetables, Household, Personal Care, Snacks, Beverages, Bakery) with prices in Indian Rupees (INR), stock levels, seller names, locations (Kanpur), and freshness timestamps:
+```csv
+product_id,product_name,category,description,price,currency,stock_quantity,unit,seller_name,location,last_updated
+P001,Basmati Rice,Groceries,Premium long-grain basmati rice,320,INR,25,5 kg,Local Fresh Mart,Kanpur,2026-08-10T10:00:00+05:30
+P004,Aashirvaad Whole Wheat Atta,Groceries,100% pure MP chakki atta,240,INR,3,5 kg,Local Fresh Mart,Kanpur,2026-08-10T10:00:00+05:30
+P005,Toor Dal,Groceries,Unpolished premium toor dal,140,INR,0,1 kg,Local Fresh Mart,Kanpur,2026-08-10T10:00:00+05:30
+```
+
+### 3. Built Agent Tools
+
+#### Tool 1: `lookup_product`
+- **Purpose**: Search catalogue for availability, prices, stock levels, unit sizes, and seller information.
+- **When to Call**: When user asks about product availability, item prices, stock counts, or available products (e.g. *"Do you have basmati rice?"*, *"How much is 5kg rice?"*, *"Which snacks are available?"*).
+- **When NOT to Call**: General greetings, chit-chat, personal preferences, or non-catalogue questions.
+- **Stock Classification**:
+  - `stock_quantity > 5` → **In stock** (e.g. 25 units)
+  - `1 <= stock_quantity <= 5` → **Low stock** (e.g. 3 units)
+  - `stock_quantity == 0` → **Out of stock**
+
+#### Tool 2: `calculate_order_total`
+- **Purpose**: Compute subtotal and total cost for requested items and quantities based on catalogue pricing.
+- **When to Call**: When user asks for total cost calculations (e.g. *"I want 2 packs of Basmati Rice"*, *"How much for 3 liters of sunflower oil?"*).
+- **When NOT to Call**: Placing orders, confirming purchases, processing payments, or reserving inventory.
+- **Stock Validation**: Rejects total calculation if requested quantity exceeds available stock (returns `INSUFFICIENT_STOCK`).
+
+### 4. Zero-Hallucination & Failure Handling
+- **Zero-Hallucination Rule**: The agent NEVER guesses prices, stock, or sellers. If asked a product question, it MUST call `lookup_product` or `calculate_order_total`.
+- **Simulated Catalogue Failure**: Setting `SIMULATE_CATALOGUE_FAILURE=true` in environment variables forces tools to fail safely:
+  - Spoken response: *"Sorry, I couldn't access the product catalogue right now. I don't want to guess the price. Please try again in a moment."*
+
+### 5. Day 4 Memory + Day 5 Tool Chaining
+If a returning customer asks *"I want my usual quantity of rice"*, the agent:
+1. Calls `lookup_caller()` to retrieve saved `usual_quantity` (e.g., 5 kg).
+2. Calls `lookup_product()` to get current price for Basmati Rice.
+3. Calls `calculate_order_total()` to state estimated total.
+
+### 6. Multi-Lingual & Hinglish Behavior
+Works seamlessly across English, Hindi, and Hinglish:
+- **English**: *"How much is basmati rice?"* → *"Basmati Rice 5 kg pack is listed at ₹320 with 25 units available."*
+- **Hinglish**: *"Basmati rice kitne ka hai?"* → *"Basmati rice ka listed price ₹320 hai, 5 kg pack ke liye."*
+- **Hindi**: *"बासमती चावल कितने के हैं?"* → *"बासमती चावल की सूचीबद्ध कीमत ₹320 है, 5 किलो पैक के लिए।"*
+
+### 7. Frontend Real-Time Tool Indicator
+The Next.js UI listens to LiveKit room data events (`catalogue_status`) and displays real-time status cards:
+- 🔎 **Checking catalogue...** (while tool executes)
+- 📦 **Product Found**: Basmati Rice — ₹320 / 5 kg (In stock)
+- ⚠️ **Catalogue temporarily unavailable** (on failure simulation)
+
+### 8. Testing & Execution
+- **Run Unit Tests**:
+  ```bash
+  cd backend
+  uv run pytest tests/test_catalogue.py tests/test_order_calculator.py tests/test_memory.py
+  ```
+- **Simulate Catalogue Failure**:
+  ```bash
+  SIMULATE_CATALOGUE_FAILURE=true uv run python src/agent.py dev
+  ```
+- **Run Full App**:
+  ```powershell
+  .\start_app.ps1   # Windows
+  # or ./start_app.sh # Linux/macOS
+  ```
 
 ---
 

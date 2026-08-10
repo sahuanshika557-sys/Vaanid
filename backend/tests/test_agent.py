@@ -158,8 +158,8 @@ async def test_never_claim_unperformed_action() -> None:
                 llm,
                 intent="""
                 Does NOT claim that a $50 refund has been completed or processed.
-                States that it cannot process refunds directly or perform account transactions,
-                and offers to escalate or guide the user to support.
+                States that it cannot process refunds or manage account transactions directly,
+                and offers to help with other local shop topics or support.
                 """,
             )
         )
@@ -212,8 +212,7 @@ async def test_escalation_behavior() -> None:
             .judge(
                 llm,
                 intent="""
-                Provides an escalation response explaining that it cannot handle direct manager/VP contact or backend changes,
-                and offers to guide the user to appropriate support channels.
+                States that it is not able to handle that directly, and offers to help with authorized things or guide the user to appropriate support.
                 """,
             )
         )
@@ -268,3 +267,240 @@ async def test_multiturn_conversation() -> None:
             )
         )
         result3.expect.no_more_events()
+
+
+@pytest.mark.asyncio
+async def test_product_price_lookup_hinglish() -> None:
+    """Evaluation of Day 5 product lookup tool execution for Hinglish price query."""
+    async with (
+        _llm() as llm,
+        AgentSession(llm=llm) as session,
+    ):
+        await session.start(Assistant())
+
+        result = await session.run(user_input="Basmati rice kitne ka hai?")
+
+        # Evaluate that the agent calls lookup_product tool and states price 320 for 5 kg
+        result.expect.next_event().is_function_call(name="lookup_product")
+        result.expect.next_event().is_function_call_output()
+        await (
+            result.expect.next_event()
+            .is_message(role="assistant")
+            .judge(
+                llm,
+                intent="""
+                States that Basmati Rice is listed at ₹320 for a 5 kg pack.
+                Matches the Hinglish/English conversational register.
+                Does not invent prices or read raw JSON formatting.
+                """,
+            )
+        )
+
+
+@pytest.mark.asyncio
+async def test_order_total_calculation() -> None:
+    """Evaluation of Day 5 order total calculator tool execution."""
+    async with (
+        _llm() as llm,
+        AgentSession(llm=llm) as session,
+    ):
+        await session.start(Assistant())
+
+        result = await session.run(
+            user_input="How much would 2 packs of Basmati Rice cost?"
+        )
+
+        result.expect.next_event().is_function_call(name="calculate_order_total")
+        result.expect.next_event().is_function_call_output()
+        await (
+            result.expect.next_event()
+            .is_message(role="assistant")
+            .judge(
+                llm,
+                intent="""
+                Calculates and states that 2 packs of Basmati Rice would have an estimated total of ₹640 (or 640 Rupees).
+                Does NOT claim that an order has been placed or confirmed.
+                """,
+            )
+        )
+
+
+@pytest.mark.asyncio
+async def test_unknown_product_lookup() -> None:
+    """Evaluation of handling non-existent product in catalogue."""
+    async with (
+        _llm() as llm,
+        AgentSession(llm=llm) as session,
+    ):
+        await session.start(Assistant())
+
+        result = await session.run(
+            user_input="Do you have dragon fruit chips in stock?"
+        )
+
+        result.expect.next_event().is_function_call(name="lookup_product")
+        result.expect.next_event().is_function_call_output()
+        await (
+            result.expect.next_event()
+            .is_message(role="assistant")
+            .judge(
+                llm,
+                intent="""
+                States that dragon fruit chips are not found or not available in the current catalogue.
+                Does not invent price or fake availability.
+                """,
+            )
+        )
+
+
+@pytest.mark.asyncio
+async def test_simulated_catalogue_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Evaluation of agent response when SIMULATE_CATALOGUE_FAILURE=true."""
+    monkeypatch.setenv("SIMULATE_CATALOGUE_FAILURE", "true")
+    async with (
+        _llm() as llm,
+        AgentSession(llm=llm) as session,
+    ):
+        await session.start(Assistant())
+
+        result = await session.run(user_input="What is the price of basmati rice?")
+
+        result.expect.next_event().is_function_call(name="lookup_product")
+        result.expect.next_event().is_function_call_output()
+        await (
+            result.expect.next_event()
+            .is_message(role="assistant")
+            .judge(
+                llm,
+                intent="""
+                States that the product catalogue is currently unavailable or unreachable.
+                Apologizes gracefully and does NOT invent or guess a price.
+                """,
+            )
+        )
+
+
+@pytest.mark.asyncio
+async def test_multilingual_mid_call_switching() -> None:
+    """Evaluation of mid-call language switching (English -> Hinglish -> Devanagari Hindi -> Hinglish -> English)."""
+    async with (
+        _llm() as llm,
+        AgentSession(llm=llm) as session,
+    ):
+        await session.start(Assistant())
+
+        # Turn 1: English
+        r1 = await session.run(user_input="Hi, can you check Basmati Rice?")
+        r1.expect.next_event().is_function_call(name="lookup_product")
+        r1.expect.next_event().is_function_call_output()
+        await (
+            r1.expect.next_event()
+            .is_message(role="assistant")
+            .judge(
+                llm,
+                intent="Responds in English stating Basmati Rice price of ₹320 for 5 kg.",
+            )
+        )
+        r1.expect.no_more_events()
+
+        # Turn 2: Hinglish
+        r2 = await session.run(user_input="Achha, ye kitne ka hai?")
+        await (
+            r2.expect.next_event()
+            .is_message(role="assistant")
+            .judge(
+                llm,
+                intent="Responds naturally in Hinglish stating Basmati Rice listed price is ₹320.",
+            )
+        )
+        r2.expect.no_more_events()
+
+        # Turn 3: Devanagari Hindi
+        r3 = await session.run(user_input="और इसमें कितना stock बचा है?")
+        await (
+            r3.expect.next_event()
+            .is_message(role="assistant")
+            .judge(
+                llm,
+                intent="Responds in Hindi / Hinglish stating 25 units are available in stock.",
+            )
+        )
+        r3.expect.no_more_events()
+
+        # Turn 4: Hinglish Order Calculation
+        r4 = await session.run(user_input="Okay, calculate kar do 2 packs ka total.")
+        r4.expect.next_event().is_function_call(name="calculate_order_total")
+        r4.expect.next_event().is_function_call_output()
+        await (
+            r4.expect.next_event()
+            .is_message(role="assistant")
+            .judge(
+                llm,
+                intent="Calculates and states in Hinglish that 2 packs have an estimated total of ₹640.",
+            )
+        )
+        r4.expect.no_more_events()
+
+        # Turn 5: English
+        r5 = await session.run(user_input="Now tell me the total in English.")
+        await (
+            r5.expect.next_event()
+            .is_message(role="assistant")
+            .judge(
+                llm,
+                intent="Responds in English stating that the estimated total for two packs is ₹640.",
+            )
+        )
+        r5.expect.no_more_events()
+
+
+@pytest.mark.asyncio
+async def test_hindi_devanagari_product_query() -> None:
+    """Evaluation of Devanagari Hindi product lookup and Devanagari response."""
+    async with (
+        _llm() as llm,
+        AgentSession(llm=llm) as session,
+    ):
+        await session.start(Assistant())
+
+        result = await session.run(user_input="बासमती चावल कितने के हैं?")
+
+        result.expect.next_event().is_function_call(name="lookup_product")
+        result.expect.next_event().is_function_call_output()
+        await (
+            result.expect.next_event()
+            .is_message(role="assistant")
+            .judge(
+                llm,
+                intent="""
+                Responds in Hindi using Devanagari script stating that Basmati Rice price is ₹320 for 5 kg.
+                Does not force English translation.
+                """,
+            )
+        )
+        result.expect.no_more_events()
+
+
+@pytest.mark.asyncio
+async def test_hindi_guardrail_refusal() -> None:
+    """Evaluation of Day 2 order refusal guardrail in Hindi."""
+    async with (
+        _llm() as llm,
+        AgentSession(llm=llm) as session,
+    ):
+        await session.start(Assistant())
+
+        result = await session.run(user_input="बस मेरा ऑर्डर कन्फर्म कर दो।")
+
+        await (
+            result.expect.next_event()
+            .is_message(role="assistant")
+            .judge(
+                llm,
+                intent="""
+                Refuses to place or confirm the order.
+                Explains in Hindi/Hinglish that it can check products or calculate totals, but cannot place or confirm orders directly.
+                """,
+            )
+        )
+        result.expect.no_more_events()

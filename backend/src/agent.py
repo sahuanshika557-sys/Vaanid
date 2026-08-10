@@ -1,14 +1,8 @@
 import asyncio
+import json
 import logging
 import os
 
-from database.memory import (
-    delete_customer,
-    get_customer,
-    init_db,
-    update_customer,
-    update_last_interaction,
-)
 from dotenv import load_dotenv
 from livekit import rtc
 from livekit.agents import (
@@ -26,6 +20,16 @@ from livekit.agents import (
 from livekit.plugins import deepgram, google, murf, noise_cancellation, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
+from database.memory import (
+    delete_customer,
+    get_customer,
+    init_db,
+    update_customer,
+    update_last_interaction,
+)
+from tools.catalogue_tool import lookup_product_data
+from tools.order_tool import calculate_order_data
+
 logger = logging.getLogger("agent")
 
 load_dotenv(".env.local")
@@ -41,8 +45,7 @@ async def get_caller_identity(ctx: JobContext) -> str:
         await asyncio.sleep(0.2)
     return "cust_default"
 
-# Change this prompt to change what your voice agent does.
-# See README.md for example prompts (customer support, language tutor, receptionist).
+
 SYSTEM_PROMPT = """You are an AI customer support assistant representing Murf AI and Local Commerce businesses.
 
 IDENTITY:
@@ -67,6 +70,18 @@ GUARDRAILS & REFUSALS:
 - NEVER CLAIM: You must NEVER claim that an order was placed, a booking completed, a refund processed, a payment received, a person/company contacted, a tool used, or any action performed unless the application actually completed it.
 - If you cannot perform an action directly, say: "I'm not able to complete that action directly."
 
+REAL-TIME PRODUCT & CATALOGUE TOOLS (DAY 5):
+- You have access to real domain tools: lookup_product and calculate_order_total.
+- MANDATORY TOOL USAGE: You MUST call lookup_product whenever the user asks about product prices, availability, stock levels, item details, or catalogue items.
+- MANDATORY TOOL USAGE: You MUST call calculate_order_total whenever the user asks to calculate total cost for specific product quantities.
+- NEVER HALLUCINATE PRODUCT DATA: Never invent or guess product prices, stock levels, sellers, or availability from memory. If a tool returns a price (e.g. ₹320 for 5 kg), state that exact price.
+- DATA FRESHNESS: When speaking product details, state data freshness clearly using local context (e.g. "The local catalogue currently lists Basmati Rice at ₹320 for 5 kg."). Never claim live market prices.
+- STOCK LEVELS: Report stock status accurately based on tool response (e.g. "In stock with 25 units", "Low stock with 3 units", or "Currently out of stock").
+- ESTIMATED TOTALS ONLY: When stating calculated order totals, always state that it is an ESTIMATED TOTAL. Explicitly clarify that NO order has been placed or confirmed if the user asks to buy or order items.
+- TOOL FAILURE GRACEFUL HANDLING: If a tool returns an error or catalogue unavailable response, apologize gracefully (e.g., "Sorry, I couldn't access the product catalogue right now. I don't want to guess the price. Please try again in a moment."). Never invent fake prices when tools fail.
+- MEMORY + TOOL CHAINING: If a returning caller says "I want my usual quantity of rice", use lookup_caller to find their remembered usual quantity (e.g. 5 kg), then lookup_product or calculate_order_total. Ask for confirmation if quantity interpretation is ambiguous.
+- SPOKEN RESPONSE STYLE: Speak tool results naturally in conversational sentences under 20 words. NEVER read raw JSON, key names, or tool function names to the caller.
+
 CUSTOMER MEMORY & MANDATORY CONSENT:
 - YOU MUST ASK FOR EXPLICIT CONSENT BEFORE SAVING ANY PERSONAL FACT OR PREFERENCE.
 - When a user states a name, language preference, delivery slot, or usual quantity (e.g., "My name is Ramesh" or "I prefer evening delivery"), DO NOT save it silently.
@@ -82,11 +97,22 @@ ESCALATION BEHAVIOR:
 - For out-of-authority or unsupported requests, use this spoken escalation phrasing:
   "I'm not able to handle that directly. I can help with the things I'm authorized to do, or guide you to the appropriate support team."
 
-LANGUAGE & CODE-MIXING:
-- Support English, Hindi, and Hindi-English code-mixing (Hinglish).
-- MIRROR the user's language choice naturally.
-- Do not translate unnecessarily, do not force English if the user speaks Hindi, and do not force Hindi if the user speaks English.
-- Keep language conversational and match user formality.
+LANGUAGE & SCRIPT MIRRORING (MULTILINGUAL VOICE):
+- DYNAMIC MID-CALL DETECTION: Automatically detect the user's language, script, and conversational register from their LATEST utterance. Always prioritize the current utterance over previous turns or stored preferences.
+- NATURAL SWITCHING: Switch languages instantly and naturally during the SAME conversation without requiring call restarts, page refreshes, or manual settings.
+- MIRRORING RULES:
+  1. ENGLISH: If the user speaks English ("How much is basmati rice?"), respond in natural English ("Basmati Rice is listed at ₹320 for 5 kg.").
+  2. HINGLISH / ROMAN HINDI: If the user speaks Hinglish or Roman Hindi ("Basmati rice kitne ka hai?" or "2 pack ka total?"), respond in natural conversational Hinglish ("Basmati rice ka listed price ₹320 hai." or "2 packs ka estimated total ₹640 hoga.").
+  3. HINDI (DEVANAGARI): If the user speaks Hindi in Devanagari script ("बासमती चावल कितने के हैं?"), respond in natural Hindi using Devanagari script ("बासमती चावल की सूचीबद्ध कीमत ₹320 है।").
+  4. CODE-MIXED: If the user mixes languages ("Can you check kar sakte ho basmati rice price?"), mirror the code-mixed register ("Basmati rice ka listed price ₹320 hai.").
+- DO NOT TRANSLATE UNNECESSARILY: Reply directly in the user's active language/register. Never output bilingual translations or side-by-side translated sentences.
+- NEVER EXPLAIN LANGUAGE DETECTION: Never explain language detection rules to the user (e.g. do NOT say "I detected that you are speaking Hindi").
+- OVERRIDE STORED PREFERENCES: Stored customer memory preferences (e.g. language_preference = Hindi) should guide initial greetings, but the current utterance ALWAYS overrides saved preferences.
+- UNCLEAR SPEECH / SILENCE FALLBACK: If speech is unclear, ask naturally in the user's language:
+  - English: "Sorry, I couldn't catch that clearly. Could you repeat?"
+  - Hinglish: "Sorry, mujhe clear nahi suna. Ek baar phir bata sakte ho?"
+  - Hindi: "माफ़ कीजिए, मुझे ठीक से सुनाई नहीं दिया। आप दोबारा बता सकते हैं?"
+- GUARDRAILS IN ALL LANGUAGES: Enforce all guardrails and refusals identically regardless of language (e.g. Hinglish: "Main estimated total calculate kar sakta hoon, lekin order confirm nahi kar sakta.").
 
 VOICE-FIRST RESPONSE STYLE:
 - Use short sentences under 20 words per sentence.
@@ -96,12 +122,100 @@ VOICE-FIRST RESPONSE STYLE:
 
 
 class Assistant(Agent):
-    def __init__(self, user_id: str = "cust_default") -> None:
+    def __init__(
+        self, user_id: str = "cust_default", ctx: JobContext | None = None
+    ) -> None:
         self.user_id = user_id
+        self.ctx = ctx
         super().__init__(instructions=SYSTEM_PROMPT)
 
+    async def _publish_tool_event(self, tool_name: str, payload: dict) -> None:
+        """Send real-time catalogue status to frontend connected participants via LiveKit data channel."""
+        if self.ctx and self.ctx.room and self.ctx.room.local_participant:
+            try:
+                event_data = json.dumps(
+                    {
+                        "type": "catalogue_status",
+                        "tool_name": tool_name,
+                        "data": payload,
+                    }
+                ).encode("utf-8")
+                await self.ctx.room.local_participant.publish_data(
+                    event_data,
+                    topic="catalogue_status",
+                )
+            except Exception as e:
+                logger.warning(f"Could not publish tool event to room: {e}")
+
     @function_tool
-    async def lookup_caller(self, context: RunContext, user_id: str | None = None) -> dict:
+    async def lookup_product(self, context: RunContext, product_query: str) -> dict:
+        """Find product catalogue information such as availability, price, stock quantity, seller, and unit size.
+
+        WHEN TO CALL:
+        Call this tool whenever the user asks about product availability, prices, stock levels, item details, seller info, or available catalogue items.
+        Examples: "Do you have basmati rice?", "How much is 5kg rice?", "Is mustard oil available?", "What snacks do you sell?", "How many packs of atta are left?".
+
+        WHEN NOT TO CALL:
+        Do NOT call for general greetings, personal preferences, customer memory lookups (use lookup_caller), or non-product support questions.
+
+        Args:
+            product_query: The name, category, or search phrase for the product (e.g. 'basmati rice', 'mustard oil', 'mangoes').
+        """
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_STARTED: lookup_product query='{product_query}'"
+        )
+        res = lookup_product_data(product_query)
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_COMPLETED: lookup_product found={res.get('found')}"
+        )
+        await self._publish_tool_event("lookup_product", res)
+        return res
+
+    @function_tool
+    async def calculate_order_total(
+        self,
+        context: RunContext,
+        product_query: str,
+        quantity: float = 1.0,
+        additional_items_json: str | None = None,
+    ) -> dict:
+        """Calculate the estimated total price for specific product quantities from the catalogue.
+
+        WHEN TO CALL:
+        Call this tool when the user asks for the total cost or price calculation for specific quantities of products.
+        Examples: "I want 2 packs of Basmati Rice", "How much would 3 liters of sunflower oil cost?", "Calculate total for 1 rice and 2 oils".
+
+        WHEN NOT TO CALL:
+        Do NOT call this tool to place orders, confirm purchases, process payments, or reserve stock. This tool ONLY performs mathematical price calculations.
+
+        Args:
+            product_query: Name or search query of the primary product (e.g. 'Basmati Rice').
+            quantity: The quantity requested (must be a positive number, e.g. 2).
+            additional_items_json: Optional JSON string of extra items, e.g. '[{"product_query": "Mustard Oil", "quantity": 1}]'.
+        """
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_STARTED: calculate_order_total query='{product_query}', qty={quantity}"
+        )
+        items = [{"product_query": product_query, "quantity": quantity}]
+        if additional_items_json:
+            try:
+                parsed = json.loads(additional_items_json)
+                if isinstance(parsed, list):
+                    items.extend(parsed)
+            except Exception as e:
+                logger.warning(f"Could not parse additional_items_json: {e}")
+
+        res = calculate_order_data(items)
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_COMPLETED: calculate_order_total success={res.get('success')}"
+        )
+        await self._publish_tool_event("calculate_order_total", res)
+        return res
+
+    @function_tool
+    async def lookup_caller(
+        self, context: RunContext, user_id: str | None = None
+    ) -> dict:
         """Look up a caller's saved customer memory (name, language preference, preferred delivery slot, usual quantity, past orders, last interaction).
 
         Args:
@@ -157,7 +271,9 @@ class Assistant(Agent):
             return {"success": False, "message": "Error saving customer memory."}
 
     @function_tool
-    async def forget_caller(self, context: RunContext, user_id: str | None = None) -> dict:
+    async def forget_caller(
+        self, context: RunContext, user_id: str | None = None
+    ) -> dict:
         """Delete all saved memory for a customer when they explicitly ask to be forgotten ("Forget everything about me").
 
         Args:
@@ -199,11 +315,14 @@ async def my_agent(ctx: JobContext):
     # Ensure SQLite database is initialized
     init_db()
 
-    assistant = Assistant()
+    assistant = Assistant(ctx=ctx)
 
     # Set up a voice AI pipeline using Murf Falcon, Gemini, Deepgram, and the LiveKit turn detector
     session = AgentSession(
-        stt=deepgram.STT(model="nova-3"),
+        stt=deepgram.STT(
+            model="nova-3",
+            language="multi",
+        ),
         llm=google.LLM(
             model="gemini-3.5-flash-lite",
         ),
@@ -219,6 +338,13 @@ async def my_agent(ctx: JobContext):
         preemptive_generation=True,
     )
 
+    # First join the LiveKit room to subscribe to remote audio tracks
+    await ctx.connect()
+    logger.info(
+        f"[VOICE_PIPELINE] LIVEKIT_CONNECTED: Room '{ctx.room.name}' connected."
+    )
+
+    # Start agent session attached to connected room
     await session.start(
         agent=assistant,
         room=ctx.room,
@@ -233,9 +359,9 @@ async def my_agent(ctx: JobContext):
             ),
         ),
     )
-
-    # Join the room and connect to the user
-    await ctx.connect()
+    logger.info(
+        f"[VOICE_PIPELINE] AGENT_CONNECTED & STT_STARTED: AgentSession initialized in room '{ctx.room.name}'."
+    )
 
     # Get caller identity safely without blocking room initialization
     user_id = await get_caller_identity(ctx)
@@ -243,7 +369,9 @@ async def my_agent(ctx: JobContext):
 
     # Retrieve memory if returning customer
     cust = get_customer(user_id)
-    greeting = "Hi! I'm Anisha, your local shopping assistant. How can I help you today?"
+    greeting = (
+        "Hi! I'm Anisha, your local shopping assistant. How can I help you today?"
+    )
 
     if cust and cust.get("name"):
         name = cust["name"]
@@ -266,4 +394,3 @@ async def my_agent(ctx: JobContext):
 
 if __name__ == "__main__":
     cli.run_app(server)
-
