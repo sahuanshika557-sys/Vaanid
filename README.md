@@ -325,6 +325,149 @@ murf-livekit-starter/
 
 ---
 
+## 📞 Day 6 — Complete Outbound Call Implementation (LiveKit SIP + Linphone)
+
+The Local Commerce Voice Agent supports making **Outbound Voice Calls** to verified customers regarding order updates using LiveKit SIP and Linphone.
+
+### 1. Architecture Flow
+
+```mermaid
+flowchart TD
+    A["🤖 Local Commerce Voice Agent"] --> B["⚡ LiveKit Agent (outbound/agent.py)"]
+    B --> C["🌐 LiveKit Telephony (LiveKit Cloud)"]
+    C --> D["🔌 Outbound SIP Trunk (sip.linphone.org)"]
+    D --> E["📱 Linphone SIP Network"]
+    E --> F["📲 Linphone App / Phone"]
+    F <-->|"🗣️ Two-Way Audio (TTS + STT)"| A
+```
+
+---
+
+### 2. Linphone Account Setup
+
+1. Create a free account at [linphone.org](https://www.linphone.org).
+2. Note your SIP address format:
+   ```
+   sip:<YOUR_LINPHONE_USERNAME>@sip.linphone.org
+   ```
+3. Install Linphone app on your desktop or mobile device.
+4. Log into your account in the Linphone app.
+5. **CRITICAL LINPHONE APP SETTING**:
+   - Open Linphone **Settings** → **Calls** → **Advanced calls settings**
+   - Turn **Media encryption mandatory** to **OFF** (LiveKit SIP trunk communicates over TLS with standard RTP stream).
+
+---
+
+### 3. LiveKit Cloud Setup Guide
+
+1. Log into your [LiveKit Cloud Console](https://cloud.livekit.io).
+2. Select your project and navigate to **Telephony** → **SIP Trunks**.
+3. Click **Create Outbound Trunk**.
+4. Configure the following parameters:
+   - **Name**: `linphone-trunk`
+   - **Address**: `sip.linphone.org`
+   - **Transport**: `SIP_TRANSPORT_TLS`
+   - **Numbers**: `sip:<YOUR_LINPHONE_USERNAME>` (e.g., `sip:ramesh@sip.linphone.org`)
+5. Save the trunk and copy the generated **Trunk ID** (starts with `ST_...`).
+
+---
+
+### 4. Required Environment Variables
+
+Add the following to `backend/.env.local`:
+
+```env
+LIVEKIT_URL=wss://your-project.livekit.cloud
+LIVEKIT_API_KEY=your_livekit_api_key
+LIVEKIT_API_SECRET=your_livekit_api_secret
+
+# Day 6 Outbound Telephony
+LIVEKIT_SIP_OUTBOUND_TRUNK_ID=ST_xxxxxx
+LINPHONE_USERNAME=your_linphone_username
+LINPHONE_SIP_ADDRESS=sip:your_linphone_username@sip.linphone.org
+MAX_RETRIES=2
+```
+
+---
+
+### 5. Starting the Outbound Agent & Making Calls
+
+#### Step 1: Start the Outbound Voice Agent
+In terminal 1:
+```bash
+cd backend
+uv run python src/telephony/outbound/agent.py dev
+```
+
+#### Step 2: Trigger Outbound Dial
+In terminal 2:
+```bash
+cd backend
+uv run python src/telephony/outbound/dial.py --to <YOUR_LINPHONE_USERNAME>
+```
+
+---
+
+### 6. Verified Test Order (Part 23)
+
+The outbound agent automatically seeds a verified test order into the SQLite database (`local_commerce_memory.db`):
+
+- **Customer Name**: Ramesh
+- **Product Name**: Basmati Rice
+- **Quantity**: 2 packs
+- **Price**: ₹320.00 / pack
+- **Estimated Total**: ₹640.00
+- **Status**: `PENDING`
+
+---
+
+### 7. Test Call Scenarios & Expected Behavior
+
+#### Scenario A: Order Status Query (English / Hindi / Hinglish)
+- **Agent**: *"Hello, this is the Local Commerce Assistant calling about your recent order. I'm calling to provide a verified order update. If this isn't a good time, you can end the call at any time. May I confirm that I'm speaking with you?"*
+- **User**: *"हाँ, बताइए। मेरा order status क्या है?"*
+- **Agent**: *"आपका ऑर्डर अभी pending है।"*
+- **User**: *"Achha, mera order mein kya hai?"*
+- **Agent**: *"Your order includes 2 packs of Basmati Rice with an estimated total of ₹640."*
+
+#### Scenario B: Mandatory Opt-Out (Part 13)
+- **User**: *"Don't call me again"* or *"Stop calling me"* or *"Mujhe dobara call mat karna"*
+- **Agent**: *"Understood. I won't continue this call."*
+- Call immediately disconnects and `USER_OPTED_OUT` is logged. Future dial attempts to this number are blocked automatically.
+
+#### Scenario C: No Answer / Busy / Retry Limit (Part 14 & 15)
+- If call is rejected or unanswered, outcome `NO_ANSWER` or `REJECTED` is recorded.
+- Retry policy limits retries to `MAX_RETRIES=2`.
+
+---
+
+### 8. Outbound Call Outcomes Supported
+
+- `ANSWERED`: Call answered by user.
+- `NO_ANSWER`: Linphone app rang but went unanswered.
+- `BUSY`: User declined/rejected the call on Linphone.
+- `REJECTED`: SIP server returned rejection code (e.g. 486 Busy).
+- `VOICEMAIL`: Reached voicemail.
+- `USER_OPTED_OUT`: Customer requested to stop receiving calls.
+- `COMPLETED`: Order status conversation completed normally.
+- `FAILED`: Network or SIP trunk connection failure.
+- `USER_HANGUP`: User hung up mid-call.
+
+---
+
+### 9. Troubleshooting Outbound Calls
+
+| Problem | Cause | Solution |
+| ------- | ----- | -------- |
+| **Linphone doesn't ring** | App offline or Linphone encryption setting | Verify Linphone app is running and logged in. Set *Media encryption mandatory* to **OFF** in Linphone Settings. |
+| **SIP trunk not connecting** | Invalid `LIVEKIT_SIP_OUTBOUND_TRUNK_ID` | Check trunk status in LiveKit Cloud console → Telephony → SIP Trunks. |
+| **LiveKit Auth Failure** | Incorrect API Key or Secret | Verify `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` in `backend/.env.local`. |
+| **Call immediately disconnects** | Safety pre-check failed or user opted out | Run `uv run python src/telephony/outbound/dial.py` to see detailed error pre-check output. |
+| **STT/TTS audio not heard** | Linphone audio device permission | Grant microphone/speaker permissions to Linphone application. |
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+

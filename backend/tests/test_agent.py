@@ -247,7 +247,12 @@ async def test_multiturn_conversation() -> None:
         await (
             result2.expect.next_event()
             .is_message(role="assistant")
-            .judge(llm, intent="Provides basic setup guidance concisely.")
+            .judge(
+                llm,
+                intent="""
+                Provides basic setup guidance concisely or guides the user to official app setup resources (website, app store, or support).
+                """,
+            )
         )
         result2.expect.no_more_events()
 

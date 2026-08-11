@@ -7,7 +7,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from database.schema import CREATE_CUSTOMERS_INDEX, CREATE_CUSTOMERS_TABLE
+from database.schema import (
+    CREATE_CALL_LOGS_INDEX,
+    CREATE_CALL_LOGS_TABLE,
+    CREATE_CUSTOMERS_INDEX,
+    CREATE_CUSTOMERS_TABLE,
+    CREATE_OPT_OUTS_TABLE,
+    CREATE_ORDERS_INDEX,
+    CREATE_ORDERS_TABLE,
+)
 
 logger = logging.getLogger("agent.database")
 
@@ -34,8 +42,16 @@ def init_db(db_path: str | None = None) -> str:
     try:
         with get_connection(path) as conn:
             cursor = conn.cursor()
-            cursor.execute(CREATE_CUSTOMERS_TABLE)
-            cursor.execute(CREATE_CUSTOMERS_INDEX)
+            schema_script = f"""
+            {CREATE_CUSTOMERS_TABLE}
+            {CREATE_CUSTOMERS_INDEX}
+            {CREATE_ORDERS_TABLE}
+            {CREATE_ORDERS_INDEX}
+            {CREATE_CALL_LOGS_TABLE}
+            {CREATE_CALL_LOGS_INDEX}
+            {CREATE_OPT_OUTS_TABLE}
+            """
+            cursor.executescript(schema_script)
             conn.commit()
         logger.info(f"Database initialized successfully at {path}")
     except Exception as e:
@@ -195,4 +211,314 @@ def update_last_interaction(user_id: str, db_path: str | None = None) -> bool:
             return cursor.rowcount > 0
     except Exception as e:
         logger.error(f"Error updating last interaction for '{user_id}': {e}")
+        return False
+
+
+# =============================================================================
+# Day 6 — Order Management & Outbound Call Functions
+# =============================================================================
+
+
+def create_order(
+    order_id: str,
+    user_id: str,
+    customer_name: str,
+    phone_or_sip: str,
+    product_name: str,
+    quantity: float,
+    estimated_total: float,
+    status: str = "PENDING",
+    db_path: str | None = None,
+) -> dict[str, Any]:
+    """Create or replace an order in SQLite database."""
+    now = datetime.now(timezone.utc).isoformat()
+    valid_statuses = {"PENDING", "CONFIRMED", "CANCELLED"}
+    if status.upper() not in valid_statuses:
+        raise ValueError(f"Invalid status '{status}'. Must be one of {valid_statuses}")
+
+    status_clean = status.upper()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO orders (order_id, user_id, customer_name, phone_or_sip, product_name, quantity, estimated_total, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    order_id,
+                    user_id,
+                    customer_name,
+                    phone_or_sip,
+                    product_name,
+                    quantity,
+                    estimated_total,
+                    status_clean,
+                    now,
+                    now,
+                ),
+            )
+            conn.commit()
+        logger.info(
+            f"Created order '{order_id}' for '{customer_name}' with status '{status_clean}'"
+        )
+        return get_order(order_id, db_path=db_path) or {"order_id": order_id}
+    except Exception as e:
+        logger.error(f"Error creating order '{order_id}': {e}")
+        raise
+
+
+def get_order(order_id: str, db_path: str | None = None) -> dict[str, Any] | None:
+    """Fetch order details by order_id."""
+    if not order_id:
+        return None
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT order_id, user_id, customer_name, phone_or_sip, product_name, quantity, estimated_total, status, created_at, updated_at FROM orders WHERE order_id = ?",
+                (order_id,),
+            )
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+            return None
+    except Exception as e:
+        logger.error(f"Error fetching order '{order_id}': {e}")
+        return None
+
+
+def get_order_by_user_or_sip(
+    query_target: str, db_path: str | None = None
+) -> dict[str, Any] | None:
+    """Fetch the latest order matching user_id, customer_name, or phone_or_sip."""
+    if not query_target:
+        return None
+
+    clean_target = query_target.strip()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT order_id, user_id, customer_name, phone_or_sip, product_name, quantity, estimated_total, status, created_at, updated_at
+                FROM orders
+                WHERE user_id = ? OR phone_or_sip = ? OR LOWER(customer_name) = LOWER(?) OR LOWER(phone_or_sip) LIKE LOWER(?)
+                ORDER BY updated_at DESC LIMIT 1
+                """,
+                (clean_target, clean_target, clean_target, f"%{clean_target}%"),
+            )
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+
+            # Fallback: return any latest order in system if single test order exists
+            cursor.execute(
+                "SELECT order_id, user_id, customer_name, phone_or_sip, product_name, quantity, estimated_total, status, created_at, updated_at FROM orders ORDER BY updated_at DESC LIMIT 1"
+            )
+            fallback_row = cursor.fetchone()
+            if fallback_row:
+                return dict(fallback_row)
+            return None
+    except Exception as e:
+        logger.error(f"Error searching order for target '{query_target}': {e}")
+        return None
+
+
+def update_order_status(
+    order_id: str, new_status: str, db_path: str | None = None
+) -> bool:
+    """Update status of an existing order."""
+    valid_statuses = {"PENDING", "CONFIRMED", "CANCELLED"}
+    status_clean = new_status.upper()
+    if status_clean not in valid_statuses:
+        return False
+
+    now = datetime.now(timezone.utc).isoformat()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE orders SET status = ?, updated_at = ? WHERE order_id = ?",
+                (status_clean, now, order_id),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+    except Exception as e:
+        logger.error(f"Error updating order status for '{order_id}': {e}")
+        return False
+
+
+def seed_test_order(
+    linphone_username: str | None = None, db_path: str | None = None
+) -> dict[str, Any]:
+    """Seed verified Part 23 test order for Ramesh into database."""
+    init_db(db_path)
+    username = linphone_username or os.getenv("LINPHONE_USERNAME", "test_user")
+    sip_address = (
+        f"sip:{username}@sip.linphone.org"
+        if not username.startswith("sip:")
+        else username
+    )
+
+    # First ensure Ramesh exists in customer memory
+    update_customer(
+        user_id="cust_ramesh",
+        name="Ramesh",
+        language_preference="Hindi",
+        db_path=db_path,
+    )
+
+    # Seed verified test order: Basmati Rice x 2 = ₹640 (Status: PENDING)
+    return create_order(
+        order_id="ORD_RAMESH_101",
+        user_id="cust_ramesh",
+        customer_name="Ramesh",
+        phone_or_sip=sip_address,
+        product_name="Basmati Rice",
+        quantity=2.0,
+        estimated_total=640.0,
+        status="PENDING",
+        db_path=db_path,
+    )
+
+
+# =============================================================================
+# Call Outcome Logging, Opt-Out, and Retry Functions
+# =============================================================================
+
+
+def log_call_outcome(
+    call_id: str,
+    order_id: str,
+    user_id: str,
+    destination: str,
+    outcome: str,
+    db_path: str | None = None,
+) -> dict[str, Any]:
+    """Log an outbound call attempt and outcome."""
+    valid_outcomes = {
+        "ANSWERED",
+        "NO_ANSWER",
+        "BUSY",
+        "REJECTED",
+        "VOICEMAIL",
+        "USER_OPTED_OUT",
+        "COMPLETED",
+        "FAILED",
+        "USER_HANGUP",
+        "DIALING",
+    }
+    outcome_clean = outcome.upper()
+    if outcome_clean not in valid_outcomes:
+        outcome_clean = "FAILED"
+
+    now = datetime.now(timezone.utc).isoformat()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            # Calculate current retry count for destination
+            cursor.execute(
+                "SELECT COUNT(*) FROM call_logs WHERE destination = ? AND outcome != 'DIALING'",
+                (destination,),
+            )
+            retry_count = cursor.fetchone()[0]
+
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO call_logs (call_id, order_id, user_id, destination, outcome, timestamp, retry_count)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    call_id,
+                    order_id,
+                    user_id,
+                    destination,
+                    outcome_clean,
+                    now,
+                    retry_count,
+                ),
+            )
+            conn.commit()
+        logger.info(
+            f"Logged call outcome: call_id='{call_id}' dest='{destination}' outcome='{outcome_clean}' retry={retry_count}"
+        )
+        return {
+            "call_id": call_id,
+            "order_id": order_id,
+            "user_id": user_id,
+            "destination": destination,
+            "outcome": outcome_clean,
+            "timestamp": now,
+            "retry_count": retry_count,
+        }
+    except Exception as e:
+        logger.error(f"Error logging call outcome for '{call_id}': {e}")
+        return {"call_id": call_id, "outcome": outcome_clean}
+
+
+def get_retry_count(destination: str, db_path: str | None = None) -> int:
+    """Count non-dialing past calls for destination."""
+    if not destination:
+        return 0
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT COUNT(*) FROM call_logs WHERE destination = ? AND outcome IN ('NO_ANSWER', 'BUSY', 'REJECTED', 'FAILED')",
+                (destination,),
+            )
+            row = cursor.fetchone()
+            return row[0] if row else 0
+    except Exception as e:
+        logger.error(f"Error calculating retry count for '{destination}': {e}")
+        return 0
+
+
+def record_user_opt_out(
+    destination: str, user_id: str = "cust_default", db_path: str | None = None
+) -> bool:
+    """Store USER_OPTED_OUT preference in SQLite database."""
+    if not destination:
+        return False
+
+    now = datetime.now(timezone.utc).isoformat()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO opt_outs (destination, user_id, opted_out_at)
+                VALUES (?, ?, ?)
+                """,
+                (destination, user_id, now),
+            )
+            conn.commit()
+        logger.info(
+            f"Recorded opt-out for destination '{destination}' (user '{user_id}')"
+        )
+        return True
+    except Exception as e:
+        logger.error(f"Error recording opt-out for '{destination}': {e}")
+        return False
+
+
+def is_user_opted_out(destination: str, db_path: str | None = None) -> bool:
+    """Check if destination or user has opted out of calls."""
+    if not destination:
+        return False
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT destination FROM opt_outs WHERE destination = ? OR user_id = ?",
+                (destination, destination),
+            )
+            row = cursor.fetchone()
+            return row is not None
+    except Exception as e:
+        logger.error(f"Error checking opt-out for '{destination}': {e}")
         return False

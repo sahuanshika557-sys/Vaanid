@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { TokenSource } from 'livekit-client';
 import { useSession } from '@livekit/components-react';
 import { WarningIcon } from '@phosphor-icons/react/dist/ssr';
 import type { AppConfig } from '@/app-config';

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { OutboundCard } from '@/components/app/outbound-card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/shadcn/utils';
 import { getOrCreateCustomerId } from '@/lib/utils';
@@ -223,6 +224,11 @@ export const WelcomeView = ({
               )}
             </Button>
           </div>
+        </section>
+
+        {/* Day 6 — Outbound SIP Telephony Section */}
+        <section id="outbound-call" className="w-full max-w-lg">
+          <OutboundCard />
         </section>
 
         {/* What I Can Help With (Local Commerce Capabilities Grid) */}

@@ -17,3 +17,48 @@ CREATE TABLE IF NOT EXISTS customers (
 CREATE_CUSTOMERS_INDEX = """
 CREATE INDEX IF NOT EXISTS idx_customers_user_id ON customers(user_id);
 """
+
+CREATE_ORDERS_TABLE = """
+CREATE TABLE IF NOT EXISTS orders (
+    order_id TEXT PRIMARY KEY,
+    user_id TEXT,
+    customer_name TEXT,
+    phone_or_sip TEXT,
+    product_name TEXT,
+    quantity REAL,
+    estimated_total REAL,
+    status TEXT CHECK(status IN ('PENDING', 'CONFIRMED', 'CANCELLED')),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"""
+
+CREATE_ORDERS_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_phone_or_sip ON orders(phone_or_sip);
+"""
+
+CREATE_CALL_LOGS_TABLE = """
+CREATE TABLE IF NOT EXISTS call_logs (
+    call_id TEXT PRIMARY KEY,
+    order_id TEXT,
+    user_id TEXT,
+    destination TEXT,
+    outcome TEXT CHECK(outcome IN ('ANSWERED', 'NO_ANSWER', 'BUSY', 'REJECTED', 'VOICEMAIL', 'USER_OPTED_OUT', 'COMPLETED', 'FAILED', 'USER_HANGUP', 'DIALING')),
+    timestamp TEXT NOT NULL,
+    retry_count INTEGER DEFAULT 0
+);
+"""
+
+CREATE_CALL_LOGS_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_call_logs_destination ON call_logs(destination);
+CREATE INDEX IF NOT EXISTS idx_call_logs_user_id ON call_logs(user_id);
+"""
+
+CREATE_OPT_OUTS_TABLE = """
+CREATE TABLE IF NOT EXISTS opt_outs (
+    destination TEXT PRIMARY KEY,
+    user_id TEXT,
+    opted_out_at TEXT NOT NULL
+);
+"""
