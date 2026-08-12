@@ -373,6 +373,12 @@ async def my_agent(ctx: JobContext):
 
     await session.say(greeting, allow_interruptions=True)
 
+    # Keep session active for multi-turn conversation until user hangs up or opts out
+    logger.info(
+        "[OUTBOUND_VOICE_PIPELINE] Greeting completed. Session active for multi-turn conversation."
+    )
+    await ctx.wait_for_disconnect()
+
 
 if __name__ == "__main__":
     cli.run_app(server)
