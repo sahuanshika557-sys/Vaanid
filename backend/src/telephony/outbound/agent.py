@@ -23,6 +23,7 @@ from livekit.agents import (  # noqa: E402
     RunContext,
     cli,
     function_tool,
+    room_io,
     tokenize,
 )
 from livekit.plugins import (  # noqa: E402
@@ -354,7 +355,14 @@ async def my_agent(ctx: JobContext):
     await session.start(
         agent=assistant,
         room=ctx.room,
+        room_options=room_io.RoomOptions(
+            close_on_disconnect=False,
+        ),
     )
+
+    @session.on("user_speech_committed")
+    def _on_user_speech(msg):
+        logger.info(f"[OUTBOUND_VOICE_PIPELINE] USER_SPOKE: '{msg.content}'")
 
     # Initial mandatory outbound opening greeting (Part 2 & Part 8 requirement)
     greeting = (
