@@ -364,7 +364,16 @@ async def my_agent(ctx: JobContext):
     def _on_user_speech(msg):
         logger.info(f"[OUTBOUND_VOICE_PIPELINE] USER_SPOKE: '{msg.content}'")
 
+    @session.on("user_started_speaking")
+    def _on_user_started():
+        logger.info("[OUTBOUND_VOICE_PIPELINE] VAD: User started speaking...")
+
+    @session.on("user_stopped_speaking")
+    def _on_user_stopped():
+        logger.info("[OUTBOUND_VOICE_PIPELINE] VAD: User stopped speaking.")
+
     # Initial mandatory outbound opening greeting (Part 2 & Part 8 requirement)
+
     greeting = (
         "Hello, this is the Local Commerce Assistant calling about your recent order. "
         "I'm calling to provide a verified order update. If this isn't a good time, you can end the call at any time. "
