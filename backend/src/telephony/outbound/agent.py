@@ -24,7 +24,6 @@ from livekit.agents import (  # noqa: E402
     cli,
     function_tool,
     room_io,
-    tokenize,
 )
 from livekit.plugins import (  # noqa: E402
     deepgram,
@@ -344,8 +343,6 @@ async def my_agent(ctx: JobContext):
             voice="Anisha",
             locale="en-IN",
             style="Conversation",
-            tokenizer=tokenize.basic.SentenceTokenizer(min_sentence_len=2),
-            text_pacing=True,
         ),
         turn_detection=MultilingualModel(),
         vad=ctx.proc.userdata["vad"],
@@ -373,10 +370,8 @@ async def my_agent(ctx: JobContext):
         logger.info("[OUTBOUND_VOICE_PIPELINE] VAD: User stopped speaking.")
 
     # Initial mandatory outbound opening greeting (Part 2 & Part 8 requirement)
-
     greeting = (
-        "Hello, this is the Local Commerce Assistant calling about your recent order. "
-        "I'm calling to provide a verified order update. If this isn't a good time, you can end the call at any time. "
+        "Hello, this is the Local Commerce Assistant calling about your recent order update. "
         "May I confirm that I'm speaking with you?"
     )
 
