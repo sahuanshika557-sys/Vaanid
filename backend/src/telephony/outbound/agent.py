@@ -377,7 +377,15 @@ async def my_agent(ctx: JobContext):
     logger.info(
         "[OUTBOUND_VOICE_PIPELINE] Greeting completed. Session active for multi-turn conversation."
     )
-    await ctx.wait_for_disconnect()
+    disconnect_event = asyncio.Event()
+
+    @ctx.room.on("disconnected")
+    def _on_room_disconnected(*args):
+        logger.info("[OUTBOUND_VOICE_PIPELINE] Call disconnected by participant.")
+        if not disconnect_event.is_set():
+            disconnect_event.set()
+
+    await disconnect_event.wait()
 
 
 if __name__ == "__main__":
