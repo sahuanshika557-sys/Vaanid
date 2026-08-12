@@ -111,12 +111,21 @@ interface CatalogueInfo {
   errorMessage?: string;
 }
 
+interface EscalationInfo {
+  status: 'creating' | 'created' | 'duplicate' | 'failed' | 'denied';
+  referenceId?: string;
+  isDuplicate?: boolean;
+  message?: string;
+}
+
 function AgentStatusHeader({
   agentState,
   catalogueInfo,
+  escalationInfo,
 }: {
   agentState?: string;
   catalogueInfo?: CatalogueInfo | null;
+  escalationInfo?: EscalationInfo | null;
 }) {
   let badgeColor = 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
   let dotColor = 'bg-emerald-400 animate-pulse';
@@ -130,9 +139,11 @@ function AgentStatusHeader({
     badgeColor = 'border-amber-500/30 bg-amber-500/10 text-amber-400';
     dotColor = 'bg-amber-400 animate-ping';
     label =
-      catalogueInfo?.status === 'checking'
-        ? '🔎 Checking catalogue...'
-        : '💭 Anisha is thinking...';
+      escalationInfo?.status === 'creating'
+        ? '📑 Preparing human support request...'
+        : catalogueInfo?.status === 'checking'
+          ? '🔎 Checking catalogue...'
+          : '💭 Anisha is thinking...';
   } else if (agentState === 'connecting' || agentState === 'initializing') {
     badgeColor = 'border-blue-500/30 bg-blue-500/10 text-blue-400';
     dotColor = 'bg-blue-400 animate-spin';
@@ -151,9 +162,52 @@ function AgentStatusHeader({
         <span>{label}</span>
       </div>
 
+      {/* Escalation Status Activity Card */}
+      <AnimatePresence>
+        {escalationInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="pointer-events-auto max-w-sm rounded-xl border border-emerald-500/40 bg-slate-950/90 px-4 py-3 shadow-2xl backdrop-blur-md"
+          >
+            {escalationInfo.status === 'creating' && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
+                <span className="size-2 animate-ping rounded-full bg-amber-400" />
+                <span>Preparing Human Support Request...</span>
+              </div>
+            )}
+            {(escalationInfo.status === 'created' || escalationInfo.status === 'duplicate') && (
+              <div className="flex flex-col gap-1 text-xs">
+                <div className="flex items-center gap-1.5 font-bold text-emerald-400">
+                  <span>🎧 Support Request Created</span>
+                </div>
+                <div className="font-mono text-sm font-extrabold text-white">
+                  Ref ID: {escalationInfo.referenceId}
+                </div>
+                <div className="text-[11px] text-slate-300">{escalationInfo.message}</div>
+              </div>
+            )}
+            {escalationInfo.status === 'failed' && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-rose-400">
+                <span>⚠️</span>
+                <span>Could not create support request. Please try again.</span>
+              </div>
+            )}
+            {escalationInfo.status === 'denied' && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+                <span>🔒</span>
+                <span>Request cancelled — information kept private.</span>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Catalogue Tool Activity Card */}
       <AnimatePresence>
-        {catalogueInfo && (
+        {!escalationInfo && catalogueInfo && (
           <motion.div
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -196,6 +250,24 @@ function AgentStatusHeader({
   );
 }
 
+export interface AgentSessionView_01Props {
+  preConnectMessage?: string;
+  supportsChatInput?: boolean;
+  supportsVideoInput?: boolean;
+  supportsScreenShare?: boolean;
+  isPreConnectBufferEnabled?: boolean;
+
+  audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
+  audioVisualizerColor?: `#${string}`;
+  audioVisualizerColorShift?: number;
+  audioVisualizerBarCount?: number;
+  audioVisualizerGridRowCount?: number;
+  audioVisualizerGridColumnCount?: number;
+  audioVisualizerRadialBarCount?: number;
+  audioVisualizerRadialRadius?: number;
+  audioVisualizerWaveLineWidth?: number;
+}
+
 export function AgentSessionView_01({
   preConnectMessage = 'Anisha is listening, ask about products, shop info, or local services',
   supportsChatInput = true,
@@ -221,6 +293,7 @@ export function AgentSessionView_01({
   const [chatOpen, setChatOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { state: agentState } = useAgent();
+  const [escalationInfo, setEscalationInfo] = useState<EscalationInfo | null>(null);
   const [catalogueInfo, setCatalogueInfo] = useState<CatalogueInfo | null>(null);
 
   const controls: AgentControlBarControls = {
@@ -237,7 +310,7 @@ export function AgentSessionView_01({
       console.log('[VOICE_PIPELINE] USER_SPEECH_DETECTED: Agent is listening to audio input.');
     } else if (agentState === 'thinking') {
       console.log('[VOICE_PIPELINE] STT_STARTED / THINKING: Processing transcript & LLM decision.');
-      if (!catalogueInfo) {
+      if (!escalationInfo) {
         setCatalogueInfo({ status: 'checking' });
       }
     } else if (agentState === 'speaking') {
@@ -247,7 +320,7 @@ export function AgentSessionView_01({
       }, 4000);
       return () => clearTimeout(timer);
     }
-  }, [agentState, catalogueInfo]);
+  }, [agentState, escalationInfo]);
 
   // Log user transcript reception
   useEffect(() => {
@@ -259,7 +332,7 @@ export function AgentSessionView_01({
     }
   }, [messages]);
 
-  // Listen to LiveKit data channel events for catalogue_status
+  // Listen to LiveKit data channel events for catalogue_status and escalation_status
   useEffect(() => {
     const room = session.room;
     if (!room) return;
@@ -275,6 +348,17 @@ export function AgentSessionView_01({
           const strVal = new TextDecoder().decode(payload);
           const parsed = JSON.parse(strVal);
           const data = parsed.data;
+
+          if (parsed.tool_name === 'create_escalation') {
+            setEscalationInfo({
+              status: data.status,
+              referenceId: data.reference_id,
+              isDuplicate: data.is_duplicate,
+              message: data.message,
+            });
+            setTimeout(() => setEscalationInfo(null), 8000);
+            return;
+          }
 
           if (data && data.found) {
             setCatalogueInfo({
@@ -323,7 +407,11 @@ export function AgentSessionView_01({
       className={cn('bg-background relative z-10 h-full w-full overflow-hidden', className)}
       {...props}
     >
-      <AgentStatusHeader agentState={agentState} catalogueInfo={catalogueInfo} />
+      <AgentStatusHeader
+        agentState={agentState}
+        catalogueInfo={catalogueInfo}
+        escalationInfo={escalationInfo}
+      />
 
       <Fade top className="absolute inset-x-4 top-0 z-10 h-40" />
       {/* transcript */}

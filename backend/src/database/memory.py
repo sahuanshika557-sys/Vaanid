@@ -12,6 +12,8 @@ from database.schema import (
     CREATE_CALL_LOGS_TABLE,
     CREATE_CUSTOMERS_INDEX,
     CREATE_CUSTOMERS_TABLE,
+    CREATE_ESCALATIONS_INDEX,
+    CREATE_ESCALATIONS_TABLE,
     CREATE_OPT_OUTS_TABLE,
     CREATE_ORDERS_INDEX,
     CREATE_ORDERS_TABLE,
@@ -50,6 +52,8 @@ def init_db(db_path: str | None = None) -> str:
             {CREATE_CALL_LOGS_TABLE}
             {CREATE_CALL_LOGS_INDEX}
             {CREATE_OPT_OUTS_TABLE}
+            {CREATE_ESCALATIONS_TABLE}
+            {CREATE_ESCALATIONS_INDEX}
             """
             cursor.executescript(schema_script)
             conn.commit()
@@ -522,3 +526,240 @@ def is_user_opted_out(destination: str, db_path: str | None = None) -> bool:
     except Exception as e:
         logger.error(f"Error checking opt-out for '{destination}': {e}")
         return False
+
+
+# =============================================================================
+# Day 7 — Human Escalation Functions
+# =============================================================================
+
+
+def generate_reference_id(conn: sqlite3.Connection) -> str:
+    """
+    Generate a collision-safe, sequential unique Reference ID (e.g. LC-2026-0001).
+    Guarantees no duplicate reference ID is ever generated.
+    """
+    year = datetime.now(timezone.utc).year
+    cursor = conn.cursor()
+
+    # Query existing count / max sequence to calculate next number
+    cursor.execute("SELECT COUNT(*) FROM escalations")
+    count = cursor.fetchone()[0]
+    next_num = count + 1
+
+    while True:
+        ref_id = f"LC-{year}-{next_num:04d}"
+        cursor.execute(
+            "SELECT reference_id FROM escalations WHERE reference_id = ?", (ref_id,)
+        )
+        if not cursor.fetchone():
+            return ref_id
+        next_num += 1
+
+
+def create_escalation_record(
+    user_id: str,
+    customer_name: str | None,
+    issue_type: str,
+    issue_summary: str,
+    verified_information: str | None = None,
+    urgency: str | None = None,
+    language: str | None = None,
+    preferred_followup_method: str | None = None,
+    db_path: str | None = None,
+) -> dict[str, Any]:
+    """
+    Create a new escalation request in the SQLite escalations table.
+    Enforces duplicate check, sensitive info sanitization, and collision-safe Reference ID.
+    """
+    from tools.escalation_tool import determine_urgency, sanitize_sensitive_text
+
+    init_db(db_path)
+
+    clean_user_id = (user_id or "cust_default").strip()
+    clean_issue_type = (issue_type or "OTHER_ESCALATION").upper()
+    if clean_issue_type not in {"PAYMENT_REFUND", "ORDER_DISPUTE", "OTHER_ESCALATION"}:
+        clean_issue_type = "OTHER_ESCALATION"
+
+    # Sanitize inputs to prevent secret leaks
+    clean_summary = sanitize_sensitive_text(issue_summary)
+    clean_verified = sanitize_sensitive_text(verified_information)
+    clean_name = sanitize_sensitive_text(customer_name or "Radhika")
+    clean_lang = language or "English"
+    clean_followup = preferred_followup_method or "Phone"
+
+    calculated_urgency = determine_urgency(clean_issue_type, clean_summary, urgency)
+    now = datetime.now(timezone.utc).isoformat()
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+
+            # STEP 11 — DUPLICATE ESCALATION PROTECTION
+            cursor.execute(
+                """
+                SELECT reference_id, issue_type, issue_summary, urgency, status, created_at
+                FROM escalations
+                WHERE user_id = ? AND issue_type = ? AND status IN ('OPEN', 'IN_PROGRESS')
+                ORDER BY created_at DESC LIMIT 1
+                """,
+                (clean_user_id, clean_issue_type),
+            )
+            dup = cursor.fetchone()
+
+            if dup:
+                dup_dict = dict(dup)
+                logger.info(
+                    f"Duplicate open escalation found for user '{clean_user_id}': ref='{dup_dict['reference_id']}'"
+                )
+                return {
+                    "success": True,
+                    "is_duplicate": True,
+                    "reference_id": dup_dict["reference_id"],
+                    "status": dup_dict["status"],
+                    "urgency": dup_dict["urgency"],
+                    "message": f"I found an existing open support request for this issue. Your reference ID is {dup_dict['reference_id']}.",
+                }
+
+            # Generate collision-safe reference ID
+            ref_id = generate_reference_id(conn)
+
+            cursor.execute(
+                """
+                INSERT INTO escalations (
+                    reference_id, user_id, customer_name, issue_type, issue_summary,
+                    verified_information, urgency, language, preferred_followup_method,
+                    status, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?)
+                """,
+                (
+                    ref_id,
+                    clean_user_id,
+                    clean_name,
+                    clean_issue_type,
+                    clean_summary,
+                    clean_verified,
+                    calculated_urgency,
+                    clean_lang,
+                    clean_followup,
+                    now,
+                    now,
+                ),
+            )
+            conn.commit()
+
+        logger.info(
+            f"Created escalation ref='{ref_id}' user='{clean_user_id}' type='{clean_issue_type}' urgency='{calculated_urgency}'"
+        )
+        return {
+            "success": True,
+            "is_duplicate": False,
+            "reference_id": ref_id,
+            "customer_name": clean_name,
+            "issue_type": clean_issue_type,
+            "issue_summary": clean_summary,
+            "verified_information": clean_verified,
+            "urgency": calculated_urgency,
+            "language": clean_lang,
+            "preferred_followup_method": clean_followup,
+            "status": "OPEN",
+            "created_at": now,
+            "message": f"Your support request has been created successfully. Your reference ID is {ref_id}.",
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to create escalation for user '{clean_user_id}': {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "I'm sorry, I couldn't create the support request right now. Please try again shortly.",
+        }
+
+
+def get_escalations(
+    status: str | None = None,
+    urgency: str | None = None,
+    search: str | None = None,
+    db_path: str | None = None,
+) -> list[dict[str, Any]]:
+    """Fetch escalation records filtered by status, urgency, or search term."""
+    init_db(db_path)
+    query = "SELECT id, reference_id, user_id, customer_name, issue_type, issue_summary, verified_information, urgency, language, preferred_followup_method, status, created_at, updated_at FROM escalations WHERE 1=1"
+    params: list[Any] = []
+
+    if status and status.upper() != "ALL":
+        query += " AND status = ?"
+        params.append(status.upper())
+
+    if urgency and urgency.upper() != "ALL":
+        query += " AND urgency = ?"
+        params.append(urgency.upper())
+
+    if search:
+        s = f"%{search.strip()}%"
+        query += " AND (reference_id LIKE ? OR customer_name LIKE ? OR issue_summary LIKE ? OR user_id LIKE ?)"
+        params.extend([s, s, s, s])
+
+    query += " ORDER BY created_at DESC"
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            return [dict(r) for r in rows]
+    except Exception as e:
+        logger.error(f"Error fetching escalations: {e}")
+        return []
+
+
+def get_escalation_by_ref(
+    reference_id: str, db_path: str | None = None
+) -> dict[str, Any] | None:
+    """Fetch single escalation details by reference_id."""
+    if not reference_id:
+        return None
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id, reference_id, user_id, customer_name, issue_type, issue_summary, verified_information, urgency, language, preferred_followup_method, status, created_at, updated_at FROM escalations WHERE reference_id = ?",
+                (reference_id.strip().upper(),),
+            )
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+            return None
+    except Exception as e:
+        logger.error(f"Error fetching escalation '{reference_id}': {e}")
+        return None
+
+
+def update_escalation_status(
+    reference_id: str, new_status: str, db_path: str | None = None
+) -> dict[str, Any] | None:
+    """Update status of an escalation record (OPEN, IN_PROGRESS, RESOLVED, CANCELLED)."""
+    valid_statuses = {"OPEN", "IN_PROGRESS", "RESOLVED", "CANCELLED"}
+    clean_status = new_status.upper().strip()
+    if clean_status not in valid_statuses:
+        logger.warning(
+            f"Invalid status '{new_status}' provided for escalation '{reference_id}'"
+        )
+        return None
+
+    now = datetime.now(timezone.utc).isoformat()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE escalations SET status = ?, updated_at = ? WHERE reference_id = ?",
+                (clean_status, now, reference_id.strip().upper()),
+            )
+            conn.commit()
+            if cursor.rowcount > 0:
+                return get_escalation_by_ref(reference_id, db_path=db_path)
+            return None
+    except Exception as e:
+        logger.error(f"Error updating status for escalation '{reference_id}': {e}")
+        return None

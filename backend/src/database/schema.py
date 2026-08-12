@@ -62,3 +62,27 @@ CREATE TABLE IF NOT EXISTS opt_outs (
     opted_out_at TEXT NOT NULL
 );
 """
+
+CREATE_ESCALATIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS escalations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reference_id TEXT UNIQUE NOT NULL,
+    user_id TEXT NOT NULL,
+    customer_name TEXT,
+    issue_type TEXT CHECK(issue_type IN ('PAYMENT_REFUND', 'ORDER_DISPUTE', 'OTHER_ESCALATION')) NOT NULL,
+    issue_summary TEXT NOT NULL,
+    verified_information TEXT,
+    urgency TEXT CHECK(urgency IN ('LOW', 'MEDIUM', 'HIGH')) NOT NULL DEFAULT 'MEDIUM',
+    language TEXT DEFAULT 'English',
+    preferred_followup_method TEXT DEFAULT 'Phone',
+    status TEXT CHECK(status IN ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED')) NOT NULL DEFAULT 'OPEN',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"""
+
+CREATE_ESCALATIONS_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_escalations_user_id ON escalations(user_id);
+CREATE INDEX IF NOT EXISTS idx_escalations_reference_id ON escalations(reference_id);
+CREATE INDEX IF NOT EXISTS idx_escalations_status ON escalations(status);
+"""

@@ -143,6 +143,13 @@ export const WelcomeView = ({
             >
               Skip to assistant ↓
             </a>
+            <span className="text-muted-foreground text-xs">•</span>
+            <a
+              href="/support"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-500/40 hover:bg-slate-800 hover:text-emerald-400"
+            >
+              <span>🎧 Support Dashboard (/support)</span>
+            </a>
           </div>
         </section>
 

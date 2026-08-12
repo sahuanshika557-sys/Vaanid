@@ -21,6 +21,7 @@ from livekit.plugins import deepgram, google, murf, noise_cancellation, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from database.memory import (
+    create_escalation_record,
     delete_customer,
     get_customer,
     init_db,
@@ -93,9 +94,43 @@ CUSTOMER MEMORY & MANDATORY CONSENT:
 - Keep memory usage natural. NEVER reveal internal user_id strings, database details, or technical terms to the user.
 - NEVER store passwords, OTPs, credit cards, or sensitive credentials.
 
-ESCALATION BEHAVIOR:
-- For out-of-authority or unsupported requests, use this spoken escalation phrasing:
-  "I'm not able to handle that directly. I can help with the things I'm authorized to do, or guide you to the appropriate support team."
+DAY 7 — HUMAN SUPPORT ESCALATION SYSTEM:
+- WHEN TO ESCALATE (TWO PRIMARY SCENARIOS):
+  1. SCENARIO 1 — PAYMENT / REFUND ISSUE:
+     - Customer reports: payment failed but money deducted, refund not received, incorrect payment amount, duplicate payment, or financial dispute.
+     - Example: "My payment was deducted but my order was not confirmed."
+     - AGENT BEHAVIOR: DO NOT resolve financial disputes yourself. Explain: "This issue requires a human support representative because it involves a payment or refund."
+  2. SCENARIO 2 — ORDER DISPUTE:
+     - Customer reports: wrong product received, damaged product, missing product, incorrect quantity, order marked delivered but not received, or serious delivery dispute.
+     - Example: "I ordered two items but only one was delivered."
+     - AGENT BEHAVIOR: Recognize that this requires human assistance.
+
+- MANDATORY PERMISSION FLOW (HARD RULE):
+  - YOU MUST ASK FOR EXPLICIT PERMISSION BEFORE CALLING create_escalation.
+  - Spoken permission request phrasing:
+    - English: "I can send a short summary of this issue to our support team. It will include your name, the problem you reported, the information I verified, and your preferred follow-up method. May I share that with the support team?"
+    - Hindi: "यह मामला हमारी human support team को देखना होगा। मैं एक छोटा summary भेज सकता हूँ जिसमें आपका नाम, समस्या, और आपकी preferred follow-up details होंगी। क्या मैं इसे support team के साथ share करूँ?"
+    - Hinglish: "Yeh issue hamari human support team dekhegi. Main ek short summary support team ke saath share kar sakta hoon. Kya main ise support team ke saath share karoon?"
+  - IF USER SAYS YES ("Yes", "Haan", "Ha", "Sure", "Okay", "Share it"):
+    - Call create_escalation with issue_type ('PAYMENT_REFUND' or 'ORDER_DISPUTE'), issue_summary, verified_information, urgency, language, preferred_followup_method.
+    - Spoken confirmation after tool execution: "Your support request has been created. Your reference ID is LC-2026-0001. A support representative will review it using this reference number."
+  - IF USER SAYS NO ("No", "Nahi", "Don't share", "Mat bhejo"):
+    - DO NOT call create_escalation.
+    - Say: "Understood. I won't share your information with the support team."
+    - Continue or end conversation naturally.
+  - NEVER BYPASS PERMISSION UNDER ANY CIRCUMSTANCES.
+
+- SENSITIVE INFORMATION PROTECTION (HARD RULE):
+  - NEVER include in escalations or store: passwords, OTPs, PINs, CVVs, card numbers, bank account numbers, auth tokens, API keys, or secrets.
+  - If caller mentions sensitive details, DO NOT repeat, store, or send them. Warn politely: "Please don't share passwords, OTPs, PINs, or payment credentials with me."
+
+- NORMAL CONVERSATIONS MUST NOT ESCALATE:
+  - Catalogue inquiries ("Do you have Basmati Rice?", "What is the price?") MUST use lookup_product or calculate_order_total. DO NOT escalate.
+  - Order status inquiries ("What is my order status?") MUST be handled using available tools. Escalate ONLY when payment/refund failure or unresolved dispute conditions are met.
+
+- PROFESSIONAL PERSONA:
+  - NEVER mention tool names (e.g. "create_escalation"), functions, or internal database terminology to the caller. Speak naturally in conversational sentences under 20 words.
+
 
 LANGUAGE & SCRIPT MIRRORING (MULTILINGUAL VOICE):
 - DYNAMIC MID-CALL DETECTION: Automatically detect the user's language, script, and conversational register from their LATEST utterance. Always prioritize the current utterance over previous turns or stored preferences.
@@ -285,6 +320,83 @@ class Assistant(Agent):
         if success:
             return {"success": True, "message": "Customer memory removed."}
         return {"success": False, "message": "Unable to remove customer memory."}
+
+    @function_tool
+    async def create_escalation(
+        self,
+        context: RunContext,
+        issue_type: str,
+        issue_summary: str,
+        customer_name: str | None = None,
+        verified_information: str | None = None,
+        urgency: str | None = None,
+        language: str | None = None,
+        preferred_followup_method: str | None = None,
+        user_id: str | None = None,
+    ) -> dict:
+        """Create a real human support escalation request in the system database.
+
+        WHEN TO CALL:
+        - Call ONLY AFTER explaining why human help is required and receiving EXPLICIT user permission ("Yes", "Haan", "Sure").
+        - Scenario 1: Payment/Refund Issue (payment failed, money deducted, refund pending, payment dispute).
+        - Scenario 2: Order Dispute (wrong item, damaged item, missing item, delivery dispute).
+
+        WHEN NOT TO CALL:
+        - DO NOT call if the user says NO to sharing information ("No", "Nahi", "Don't share").
+        - DO NOT call for normal inquiries (price questions, product stock, normal order status checks).
+
+        Args:
+            issue_type: 'PAYMENT_REFUND', 'ORDER_DISPUTE', or 'OTHER_ESCALATION'.
+            issue_summary: Brief, concise summary of the issue (under 30 words).
+            customer_name: Customer's preferred name if available.
+            verified_information: Brief details verified by agent (e.g., order ID, payment status).
+            urgency: 'LOW', 'MEDIUM', or 'HIGH'.
+            language: Active conversation language ('English', 'Hindi', 'Hinglish').
+            preferred_followup_method: 'Phone', 'Email', 'App', or 'SMS'.
+            user_id: Customer ID override if known.
+        """
+        target_user = user_id or self.user_id
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_STARTED: create_escalation target='{target_user}', issue_type='{issue_type}'"
+        )
+
+        # Publish real-time status event to frontend UI: CREATING REQUEST
+        await self._publish_tool_event(
+            "create_escalation", {"status": "creating", "issue_type": issue_type}
+        )
+
+        res = create_escalation_record(
+            user_id=target_user,
+            customer_name=customer_name,
+            issue_type=issue_type,
+            issue_summary=issue_summary,
+            verified_information=verified_information,
+            urgency=urgency,
+            language=language,
+            preferred_followup_method=preferred_followup_method,
+        )
+
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_COMPLETED: create_escalation success={res.get('success')}, ref={res.get('reference_id')}"
+        )
+
+        # Publish real-time result event to frontend UI
+        status_event = "created" if res.get("success") else "failed"
+        if res.get("is_duplicate"):
+            status_event = "duplicate"
+
+        await self._publish_tool_event(
+            "create_escalation",
+            {
+                "status": status_event,
+                "reference_id": res.get("reference_id"),
+                "is_duplicate": res.get("is_duplicate", False),
+                "urgency": res.get("urgency"),
+                "message": res.get("message"),
+            },
+        )
+
+        return res
 
 
 def zero_load(*args, **kwargs) -> float:
