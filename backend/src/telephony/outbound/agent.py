@@ -14,7 +14,6 @@ BACKEND_SRC = Path(__file__).parent.parent.parent.resolve()
 if str(BACKEND_SRC) not in sys.path:
     sys.path.insert(0, str(BACKEND_SRC))
 
-from livekit import rtc  # noqa: E402
 from livekit.agents import (  # noqa: E402
     Agent,
     AgentServer,
@@ -24,14 +23,12 @@ from livekit.agents import (  # noqa: E402
     RunContext,
     cli,
     function_tool,
-    room_io,
     tokenize,
 )
 from livekit.plugins import (  # noqa: E402
     deepgram,
     google,
     murf,
-    noise_cancellation,
     silero,
 )
 from livekit.plugins.turn_detector.multilingual import MultilingualModel  # noqa: E402
@@ -302,21 +299,23 @@ async def my_agent(ctx: JobContext):
     init_db()
     seed_test_order()
 
-    # Determine destination / caller identity from room remote participants
-    destination = "sip:default@sip.linphone.org"
-    user_id = "cust_ramesh"
+    # 1. Connect to LiveKit room
+    await ctx.connect()
+    logger.info(
+        f"[OUTBOUND_VOICE_PIPELINE] CONNECTED: LiveKit room '{ctx.room.name}' connected."
+    )
 
-    if ctx.room and ctx.room.remote_participants:
-        p = next(iter(ctx.room.remote_participants.values()), None)
-        if p and p.identity:
-            user_id = p.identity
-            destination = (
-                p.identity
-                if "sip:" in p.identity
-                else f"sip:{p.identity}@sip.linphone.org"
-            )
+    # 2. Wait for remote SIP participant (Linphone user) to join room
+    participant = await ctx.wait_for_participant()
+    logger.info(
+        f"[OUTBOUND_VOICE_PIPELINE] Remote participant '{participant.identity}' joined room."
+    )
 
-    # Opt-out pre-check
+    # 3. Determine real destination / user_id from connected participant
+    user_id = participant.identity or "cust_ramesh"
+    destination = user_id if "sip:" in user_id else f"sip:{user_id}@sip.linphone.org"
+
+    # 4. Opt-out pre-check for real destination
     if is_user_opted_out(destination) or is_user_opted_out(user_id):
         logger.warning(
             f"Aborting outbound call session for opted-out destination '{destination}'"
@@ -352,24 +351,9 @@ async def my_agent(ctx: JobContext):
         preemptive_generation=True,
     )
 
-    await ctx.connect()
-    logger.info(
-        f"[OUTBOUND_VOICE_PIPELINE] CONNECTED: LiveKit room '{ctx.room.name}' connected."
-    )
-
     await session.start(
         agent=assistant,
         room=ctx.room,
-        room_options=room_io.RoomOptions(
-            audio_input=room_io.AudioInputOptions(
-                noise_cancellation=lambda params: (
-                    noise_cancellation.BVCTelephony()
-                    if params.participant.kind
-                    == rtc.ParticipantKind.PARTICIPANT_KIND_SIP
-                    else noise_cancellation.BVC()
-                ),
-            ),
-        ),
     )
 
     # Initial mandatory outbound opening greeting (Part 2 & Part 8 requirement)
