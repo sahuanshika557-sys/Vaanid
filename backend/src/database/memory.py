@@ -10,6 +10,8 @@ from typing import Any
 from database.schema import (
     CREATE_CALL_LOGS_INDEX,
     CREATE_CALL_LOGS_TABLE,
+    CREATE_CALLS_INDEX,
+    CREATE_CALLS_TABLE,
     CREATE_CUSTOMERS_INDEX,
     CREATE_CUSTOMERS_TABLE,
     CREATE_ESCALATIONS_INDEX,
@@ -54,9 +56,12 @@ def init_db(db_path: str | None = None) -> str:
             {CREATE_OPT_OUTS_TABLE}
             {CREATE_ESCALATIONS_TABLE}
             {CREATE_ESCALATIONS_INDEX}
+            {CREATE_CALLS_TABLE}
+            {CREATE_CALLS_INDEX}
             """
             cursor.executescript(schema_script)
             conn.commit()
+
         logger.info(f"Database initialized successfully at {path}")
     except Exception as e:
         logger.error(f"Failed to initialize database at {path}: {e}")
@@ -763,3 +768,502 @@ def update_escalation_status(
     except Exception as e:
         logger.error(f"Error updating status for escalation '{reference_id}': {e}")
         return None
+
+
+# =============================================================================
+# Day 8 — Advanced Voice Analytics & Call Lifecycle Database Layer
+# =============================================================================
+
+
+def create_call_record(
+    call_id: str,
+    user_id: str = "cust_default",
+    channel: str = "BROWSER",
+    started_at: str | None = None,
+    language: str = "English",
+    intent: str = "OTHER",
+    db_path: str | None = None,
+) -> dict[str, Any]:
+    """Create or register an active call record when a call starts."""
+    init_db(db_path)
+    clean_call_id = call_id.strip()
+    clean_channel = channel.upper().strip()
+    if clean_channel not in {"BROWSER", "SIP"}:
+        clean_channel = "BROWSER"
+
+    now = datetime.now(timezone.utc).isoformat()
+    start_ts = started_at or now
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO calls (
+                    call_id, user_id, channel, started_at, language, intent,
+                    outcome, failure_reason, escalated, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, 'IN_PROGRESS', 'NONE', 0, ?, ?)
+                ON CONFLICT(call_id) DO UPDATE SET
+                    user_id = excluded.user_id,
+                    channel = excluded.channel,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    clean_call_id,
+                    user_id,
+                    clean_channel,
+                    start_ts,
+                    language,
+                    intent,
+                    now,
+                    now,
+                ),
+            )
+            conn.commit()
+
+            cursor.execute("SELECT * FROM calls WHERE call_id = ?", (clean_call_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else {"call_id": clean_call_id}
+    except Exception as e:
+        logger.error(f"Error creating call record '{clean_call_id}': {e}")
+        return {"call_id": clean_call_id, "error": str(e)}
+
+
+def update_call_event(
+    call_id: str,
+    language: str | None = None,
+    intent: str | None = None,
+    tool_failed: bool | None = None,
+    escalated: bool | None = None,
+    success_condition: str | None = None,
+    db_path: str | None = None,
+) -> bool:
+    """Update call details dynamically as conversation turns/tools occur."""
+    if not call_id:
+        return False
+
+    updates: list[str] = []
+    params: list[Any] = []
+
+    if language:
+        updates.append("language = ?")
+        params.append(language)
+    if intent:
+        updates.append("intent = ?")
+        params.append(intent)
+    if escalated is not None:
+        updates.append("escalated = ?")
+        params.append(1 if escalated else 0)
+    if success_condition:
+        updates.append("success_condition = ?")
+        params.append(success_condition)
+    if tool_failed:
+        updates.append("failure_reason = 'TOOL_FAILURE'")
+
+    if not updates:
+        return True
+
+    now = datetime.now(timezone.utc).isoformat()
+    updates.append("updated_at = ?")
+    params.append(now)
+    params.append(call_id.strip())
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f"UPDATE calls SET {', '.join(updates)} WHERE call_id = ?",
+                params,
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+    except Exception as e:
+        logger.error(f"Error updating call event for '{call_id}': {e}")
+        return False
+
+
+def finalize_call_analytics(
+    call_id: str,
+    ended_at: str | None = None,
+    outcome: str | None = None,
+    failure_reason: str | None = None,
+    intent: str | None = None,
+    language: str | None = None,
+    escalated: bool | None = None,
+    success_condition: str | None = None,
+    db_path: str | None = None,
+) -> dict[str, Any]:
+    """Single backend service responsible for finalizing call analytics when a call ends."""
+    init_db(db_path)
+    clean_call_id = call_id.strip()
+    now_dt = datetime.now(timezone.utc)
+    now_iso = now_dt.isoformat()
+    end_ts = ended_at or now_iso
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM calls WHERE call_id = ?", (clean_call_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                # If call record wasn't created on start, create it now
+                create_call_record(call_id=clean_call_id, db_path=db_path)
+                cursor.execute(
+                    "SELECT * FROM calls WHERE call_id = ?", (clean_call_id,)
+                )
+                row = cursor.fetchone()
+
+            existing = dict(row) if row else {}
+            started_at_str = existing.get("started_at") or now_iso
+
+            # Compute duration in seconds
+            try:
+                start_dt = datetime.fromisoformat(started_at_str)
+                end_dt = datetime.fromisoformat(end_ts)
+                duration = max(0, int((end_dt - start_dt).total_seconds()))
+            except Exception:
+                duration = existing.get("duration_seconds") or 0
+
+            # Determine final outcome & failure reason if not explicitly passed
+            final_outcome = (
+                outcome.upper() if outcome else existing.get("outcome", "IN_PROGRESS")
+            )
+            final_failure = (
+                failure_reason.upper()
+                if failure_reason
+                else existing.get("failure_reason", "NONE")
+            )
+            final_intent = intent or existing.get("intent", "OTHER")
+            final_lang = language or existing.get("language", "English")
+            final_esc = (
+                (1 if escalated else 0)
+                if escalated is not None
+                else existing.get("escalated", 0)
+            )
+
+            # Auto-infer outcome if still IN_PROGRESS
+            if final_outcome == "IN_PROGRESS":
+                if final_failure in {"TOOL_FAILURE", "API_FAILURE"}:
+                    final_outcome = "FAILED"
+                elif duration < 4 and final_intent == "OTHER":
+                    final_outcome = "FAILED"
+                    final_failure = "USER_HANGUP"
+                else:
+                    final_outcome = "SUCCESS"
+                    final_failure = "NONE"
+
+            if final_outcome == "SUCCESS":
+                final_failure = "NONE"
+            elif final_failure == "NONE":
+                final_failure = "UNKNOWN"
+
+            cursor.execute(
+                """
+                UPDATE calls SET
+                    ended_at = ?,
+                    duration_seconds = ?,
+                    intent = ?,
+                    language = ?,
+                    outcome = ?,
+                    failure_reason = ?,
+                    escalated = ?,
+                    success_condition = COALESCE(?, success_condition),
+                    updated_at = ?
+                WHERE call_id = ?
+                """,
+                (
+                    end_ts,
+                    duration,
+                    final_intent,
+                    final_lang,
+                    final_outcome,
+                    final_failure,
+                    final_esc,
+                    success_condition,
+                    now_iso,
+                    clean_call_id,
+                ),
+            )
+            conn.commit()
+
+            cursor.execute("SELECT * FROM calls WHERE call_id = ?", (clean_call_id,))
+            updated_row = cursor.fetchone()
+            logger.info(
+                f"Finalized call '{clean_call_id}': outcome={final_outcome}, reason={final_failure}, duration={duration}s"
+            )
+            return dict(updated_row) if updated_row else {}
+    except Exception as e:
+        logger.error(f"Error finalizing call analytics for '{clean_call_id}': {e}")
+        return {"call_id": clean_call_id, "error": str(e)}
+
+
+def get_analytics_summary(db_path: str | None = None) -> dict[str, Any]:
+    """Aggregate SQL queries for total calls, successful calls, failed calls, and success rate."""
+    init_db(db_path)
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM calls")
+            total = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM calls WHERE outcome = 'SUCCESS'")
+            successful = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM calls WHERE outcome = 'FAILED'")
+            failed = cursor.fetchone()[0]
+
+            success_rate = round((successful / total * 100), 1) if total > 0 else 0.0
+
+            return {
+                "total_calls": total,
+                "successful_calls": successful,
+                "failed_calls": failed,
+                "success_rate": success_rate,
+            }
+    except Exception as e:
+        logger.error(f"Error computing analytics summary: {e}")
+        return {
+            "total_calls": 0,
+            "successful_calls": 0,
+            "failed_calls": 0,
+            "success_rate": 0.0,
+            "error": str(e),
+        }
+
+
+def get_recent_calls(
+    limit: int = 20,
+    offset: int = 0,
+    channel: str | None = None,
+    language: str | None = None,
+    intent: str | None = None,
+    outcome: str | None = None,
+    search: str | None = None,
+    db_path: str | None = None,
+) -> dict[str, Any]:
+    """Return recent calls for table with safe fields only (No secrets, credentials, or full transcripts)."""
+    init_db(db_path)
+    query = """
+    SELECT call_id, channel, language, intent, duration_seconds AS duration,
+           outcome, failure_reason, escalated, started_at AS timestamp
+    FROM calls WHERE 1=1
+    """
+    count_query = "SELECT COUNT(*) FROM calls WHERE 1=1"
+    params: list[Any] = []
+
+    if channel and channel.upper() != "ALL":
+        query += " AND channel = ?"
+        count_query += " AND channel = ?"
+        params.append(channel.upper())
+
+    if language and language.upper() != "ALL":
+        query += " AND language = ?"
+        count_query += " AND language = ?"
+        params.append(language)
+
+    if intent and intent.upper() != "ALL":
+        query += " AND intent = ?"
+        count_query += " AND intent = ?"
+        params.append(intent.upper())
+
+    if outcome and outcome.upper() != "ALL":
+        query += " AND outcome = ?"
+        count_query += " AND outcome = ?"
+        params.append(outcome.upper())
+
+    if search:
+        s = f"%{search.strip()}%"
+        query += " AND (call_id LIKE ? OR user_id LIKE ?)"
+        count_query += " AND (call_id LIKE ? OR user_id LIKE ?)"
+        params.extend([s, s])
+
+    query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+    query_params = [*list(params), limit, offset]
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(count_query, params)
+            total_count = cursor.fetchone()[0]
+
+            cursor.execute(query, query_params)
+            rows = cursor.fetchall()
+            calls = []
+            for r in rows:
+                item = dict(r)
+                item["escalated"] = bool(item.get("escalated", 0))
+                calls.append(item)
+
+            return {
+                "calls": calls,
+                "total": total_count,
+                "limit": limit,
+                "offset": offset,
+            }
+    except Exception as e:
+        logger.error(f"Error fetching recent calls: {e}")
+        return {"calls": [], "total": 0, "error": str(e)}
+
+
+def get_analytics_trends(
+    timeframe: str = "7d", db_path: str | None = None
+) -> list[dict[str, Any]]:
+    """Return time-series call volume data grouped by date/hour for charts."""
+    init_db(db_path)
+    # Determine date filter
+    where_clause = ""
+    if timeframe == "today":
+        where_clause = "WHERE started_at >= date('now', 'start of day')"
+    elif timeframe == "7d":
+        where_clause = "WHERE started_at >= date('now', '-7 days')"
+    elif timeframe == "30d":
+        where_clause = "WHERE started_at >= date('now', '-30 days')"
+
+    query = f"""
+    SELECT strftime('%Y-%m-%d', started_at) AS date,
+           COUNT(*) AS total,
+           SUM(CASE WHEN outcome = 'SUCCESS' THEN 1 ELSE 0 END) AS successful,
+           SUM(CASE WHEN outcome = 'FAILED' THEN 1 ELSE 0 END) AS failed
+    FROM calls
+    {where_clause}
+    GROUP BY date
+    ORDER BY date ASC
+    """
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            return [dict(r) for r in rows]
+    except Exception as e:
+        logger.error(f"Error fetching analytics trends: {e}")
+        return []
+
+
+def get_analytics_failures(db_path: str | None = None) -> dict[str, Any]:
+    """Return failure reasons breakdown and dynamic data-driven insight sentence."""
+    init_db(db_path)
+    query = """
+    SELECT failure_reason, COUNT(*) AS count
+    FROM calls
+    WHERE outcome = 'FAILED' AND failure_reason != 'NONE'
+    GROUP BY failure_reason
+    ORDER BY count DESC
+    """
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            categories = {r["failure_reason"]: r["count"] for r in rows}
+
+            # Map into readable labels & generate insight
+            labels = {
+                "USER_HANGUP": "User Hang-up",
+                "INCOMPLETE_TASK": "Incomplete Task",
+                "TOOL_FAILURE": "Tool Failure",
+                "API_FAILURE": "API Failure",
+                "NO_RESPONSE": "No Response",
+                "UNKNOWN": "Unknown Failure",
+            }
+
+            breakdown = [
+                {
+                    "key": k,
+                    "label": labels.get(k, k),
+                    "count": categories.get(k, 0),
+                }
+                for k in labels
+            ]
+
+            total_failures = sum(categories.values())
+            insight = "No call failures recorded yet."
+            if total_failures > 0:
+                top_reason = max(categories.items(), key=lambda x: x[1])[0]
+                top_label = labels.get(top_reason, top_reason)
+                pct = round((categories[top_reason] / total_failures) * 100)
+                insight = f"Most failures ({pct}%) are currently caused by {top_label.lower()}s."
+
+            return {
+                "total_failures": total_failures,
+                "breakdown": breakdown,
+                "insight": insight,
+            }
+    except Exception as e:
+        logger.error(f"Error fetching failure insights: {e}")
+        return {
+            "total_failures": 0,
+            "breakdown": [],
+            "insight": "Failure insights unavailable.",
+        }
+
+
+def get_analytics_breakdowns(db_path: str | None = None) -> dict[str, Any]:
+    """Return distributions across channels, languages, intents, and Day 7 escalation stats."""
+    init_db(db_path)
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+
+            # Channels
+            cursor.execute(
+                "SELECT channel, COUNT(*) AS count FROM calls GROUP BY channel"
+            )
+            ch_rows = cursor.fetchall()
+            channels = {r["channel"]: r["count"] for r in ch_rows}
+
+            # Languages
+            cursor.execute(
+                "SELECT language, COUNT(*) AS count FROM calls GROUP BY language"
+            )
+            lang_rows = cursor.fetchall()
+            languages = {r["language"]: r["count"] for r in lang_rows}
+
+            # Intents
+            cursor.execute(
+                "SELECT intent, COUNT(*) AS count FROM calls GROUP BY intent"
+            )
+            intent_rows = cursor.fetchall()
+            intents = {r["intent"]: r["count"] for r in intent_rows}
+
+            # Day 7 Escalation Insights
+            cursor.execute("SELECT COUNT(*) FROM escalations")
+            esc_total = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM escalations WHERE status = 'OPEN'")
+            esc_open = cursor.fetchone()[0]
+            cursor.execute(
+                "SELECT COUNT(*) FROM escalations WHERE status = 'IN_PROGRESS'"
+            )
+            esc_in_progress = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM escalations WHERE status = 'RESOLVED'")
+            esc_resolved = cursor.fetchone()[0]
+
+            return {
+                "channels": {
+                    "BROWSER": channels.get("BROWSER", 0),
+                    "SIP": channels.get("SIP", 0),
+                },
+                "languages": {
+                    "English": languages.get("English", 0),
+                    "Hindi": languages.get("Hindi", 0),
+                    "Hinglish": languages.get("Hinglish", 0),
+                },
+                "intents": intents,
+                "escalations": {
+                    "total": esc_total,
+                    "open": esc_open,
+                    "in_progress": esc_in_progress,
+                    "resolved": esc_resolved,
+                },
+            }
+    except Exception as e:
+        logger.error(f"Error computing analytics breakdowns: {e}")
+        return {
+            "channels": {"BROWSER": 0, "SIP": 0},
+            "languages": {"English": 0, "Hindi": 0, "Hinglish": 0},
+            "intents": {},
+            "escalations": {"total": 0, "open": 0, "in_progress": 0, "resolved": 0},
+        }

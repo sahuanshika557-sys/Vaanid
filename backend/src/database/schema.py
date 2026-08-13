@@ -86,3 +86,32 @@ CREATE INDEX IF NOT EXISTS idx_escalations_user_id ON escalations(user_id);
 CREATE INDEX IF NOT EXISTS idx_escalations_reference_id ON escalations(reference_id);
 CREATE INDEX IF NOT EXISTS idx_escalations_status ON escalations(status);
 """
+
+CREATE_CALLS_TABLE = """
+CREATE TABLE IF NOT EXISTS calls (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    call_id TEXT UNIQUE NOT NULL,
+    user_id TEXT,
+    channel TEXT CHECK(channel IN ('BROWSER', 'SIP')) NOT NULL DEFAULT 'BROWSER',
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    duration_seconds INTEGER DEFAULT 0,
+    language TEXT DEFAULT 'English',
+    intent TEXT DEFAULT 'OTHER',
+    success_condition TEXT,
+    outcome TEXT CHECK(outcome IN ('SUCCESS', 'FAILED', 'IN_PROGRESS')) DEFAULT 'IN_PROGRESS',
+    failure_reason TEXT CHECK(failure_reason IN ('USER_HANGUP', 'INCOMPLETE_TASK', 'TOOL_FAILURE', 'API_FAILURE', 'NO_RESPONSE', 'UNKNOWN', 'NONE')) DEFAULT 'NONE',
+    escalated INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"""
+
+CREATE_CALLS_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_calls_call_id ON calls(call_id);
+CREATE INDEX IF NOT EXISTS idx_calls_created_at ON calls(created_at);
+CREATE INDEX IF NOT EXISTS idx_calls_outcome ON calls(outcome);
+CREATE INDEX IF NOT EXISTS idx_calls_channel ON calls(channel);
+CREATE INDEX IF NOT EXISTS idx_calls_language ON calls(language);
+CREATE INDEX IF NOT EXISTS idx_calls_intent ON calls(intent);
+"""

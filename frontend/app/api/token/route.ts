@@ -77,7 +77,23 @@ export async function POST(req: Request) {
       roomConfig
     );
 
+    // Record call start in SQLite calls table
+    try {
+      const { runPythonDbApi } = await import('@/lib/db');
+      runPythonDbApi([
+        'start_call',
+        JSON.stringify({
+          call_id: roomName,
+          user_id: customerId,
+          channel: 'BROWSER',
+        }),
+      ]);
+    } catch (dbErr) {
+      console.warn('[API /api/token] Could not pre-record call start:', dbErr);
+    }
+
     // Return connection details
+
     const data: ConnectionDetails = {
       serverUrl: LIVEKIT_URL,
       roomName,

@@ -21,10 +21,13 @@ from livekit.plugins import deepgram, google, murf, noise_cancellation, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from database.memory import (
+    create_call_record,
     create_escalation_record,
     delete_customer,
+    finalize_call_analytics,
     get_customer,
     init_db,
+    update_call_event,
     update_customer,
     update_last_interaction,
 )
@@ -32,6 +35,7 @@ from tools.catalogue_tool import lookup_product_data
 from tools.order_tool import calculate_order_data
 
 logger = logging.getLogger("agent")
+
 
 load_dotenv(".env.local")
 
@@ -162,6 +166,7 @@ class Assistant(Agent):
     ) -> None:
         self.user_id = user_id
         self.ctx = ctx
+        self.call_id = ctx.room.name if (ctx and ctx.room) else None
         super().__init__(instructions=SYSTEM_PROMPT)
 
     async def _publish_tool_event(self, tool_name: str, payload: dict) -> None:
@@ -204,6 +209,17 @@ class Assistant(Agent):
             f"[VOICE_PIPELINE] TOOL_CALL_COMPLETED: lookup_product found={res.get('found')}"
         )
         await self._publish_tool_event("lookup_product", res)
+
+        if self.call_id:
+            update_call_event(
+                call_id=self.call_id,
+                intent="PRODUCT_ENQUIRY",
+                tool_failed=not res.get("found", True),
+                success_condition=f"Product enquiry answered for '{product_query}'"
+                if res.get("found")
+                else None,
+            )
+
         return res
 
     @function_tool
@@ -245,6 +261,17 @@ class Assistant(Agent):
             f"[VOICE_PIPELINE] TOOL_CALL_COMPLETED: calculate_order_total success={res.get('success')}"
         )
         await self._publish_tool_event("calculate_order_total", res)
+
+        if self.call_id:
+            update_call_event(
+                call_id=self.call_id,
+                intent="CATALOGUE_LOOKUP",
+                tool_failed=not res.get("success", True),
+                success_condition=f"Order total calculated for '{product_query}'"
+                if res.get("success")
+                else None,
+            )
+
         return res
 
     @function_tool
@@ -396,6 +423,22 @@ class Assistant(Agent):
             },
         )
 
+        if self.call_id:
+            esc_intent = "HUMAN_ESCALATION"
+            if issue_type == "PAYMENT_REFUND":
+                esc_intent = "PAYMENT_ISSUE"
+            elif issue_type == "ORDER_DISPUTE":
+                esc_intent = "ORDER_DISPUTE"
+
+            update_call_event(
+                call_id=self.call_id,
+                intent=esc_intent,
+                escalated=True,
+                success_condition=f"Escalation request created with ref {res.get('reference_id')}"
+                if res.get("success")
+                else None,
+            )
+
         return res
 
 
@@ -456,6 +499,22 @@ async def my_agent(ctx: JobContext):
         f"[VOICE_PIPELINE] LIVEKIT_CONNECTED: Room '{ctx.room.name}' connected."
     )
 
+    # Get caller identity safely without blocking room initialization
+    user_id = await get_caller_identity(ctx)
+    assistant.user_id = user_id
+
+    # Create call record in calls table
+    room_name = ctx.room.name
+    assistant.call_id = room_name
+    create_call_record(call_id=room_name, user_id=user_id, channel="BROWSER")
+
+    # Register shutdown callback to finalize call analytics when room/session ends
+    async def _on_shutdown():
+        logger.info(f"Finalizing call analytics for room '{room_name}'")
+        finalize_call_analytics(call_id=room_name)
+
+    ctx.add_shutdown_callback(_on_shutdown)
+
     # Start agent session attached to connected room
     await session.start(
         agent=assistant,
@@ -475,12 +534,9 @@ async def my_agent(ctx: JobContext):
         f"[VOICE_PIPELINE] AGENT_CONNECTED & STT_STARTED: AgentSession initialized in room '{ctx.room.name}'."
     )
 
-    # Get caller identity safely without blocking room initialization
-    user_id = await get_caller_identity(ctx)
-    assistant.user_id = user_id
-
     # Retrieve memory if returning customer
     cust = get_customer(user_id)
+
     greeting = (
         "Hi! I'm Anisha, your local shopping assistant. How can I help you today?"
     )

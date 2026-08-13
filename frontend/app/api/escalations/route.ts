@@ -8,16 +8,20 @@ export async function GET(req: NextRequest) {
     const urgency = searchParams.get('urgency') || 'null';
     const search = searchParams.get('search') || 'null';
 
-    const res = runPythonDbApi(['get_escalations', status, urgency, search]);
+    const res = runPythonDbApi(['get_escalations', status, urgency, search]) as {
+      error?: string;
+      escalations?: unknown[];
+    };
 
     if (res.error) {
       return NextResponse.json({ success: false, error: res.error }, { status: 500 });
     }
 
+    const list = Array.isArray(res.escalations) ? res.escalations : [];
     return NextResponse.json({
       success: true,
-      count: res.escalations?.length || 0,
-      escalations: res.escalations || [],
+      count: list.length,
+      escalations: list,
     });
   } catch (err: unknown) {
     console.error('[API /api/escalations GET Error]:', err);

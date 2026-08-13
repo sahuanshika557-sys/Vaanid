@@ -34,7 +34,9 @@ from livekit.plugins import (  # noqa: E402
 from livekit.plugins.turn_detector.multilingual import MultilingualModel  # noqa: E402
 
 from database.memory import (  # noqa: E402
+    create_call_record,
     delete_customer,
+    finalize_call_analytics,
     get_customer,
     get_order_by_user_or_sip,
     init_db,
@@ -375,8 +377,16 @@ async def my_agent(ctx: JobContext):
         "May I confirm that I'm speaking with you?"
     )
 
+    call_room_id = ctx.room.name
+    create_call_record(
+        call_id=call_room_id,
+        user_id=user_id,
+        channel="SIP",
+        intent="ORDER_STATUS",
+    )
+
     log_call_outcome(
-        call_id=f"call_{int(asyncio.get_event_loop().time())}",
+        call_id=call_room_id,
         order_id="ORD_RAMESH_101",
         user_id=user_id,
         destination=destination,
@@ -394,6 +404,7 @@ async def my_agent(ctx: JobContext):
     @ctx.room.on("disconnected")
     def _on_room_disconnected(*args):
         logger.info("[OUTBOUND_VOICE_PIPELINE] Call disconnected by participant.")
+        finalize_call_analytics(call_id=call_room_id, intent="ORDER_STATUS")
         if not disconnect_event.is_set():
             disconnect_event.set()
 

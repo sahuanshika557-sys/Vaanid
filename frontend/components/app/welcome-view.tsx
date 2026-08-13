@@ -143,6 +143,12 @@ export const WelcomeView = ({
             >
               Skip to assistant ↓
             </a>
+            <a
+              href="/analytics"
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400 transition-colors hover:border-emerald-500/60 hover:bg-emerald-500/20"
+            >
+              <span>📊 Voice Intelligence (/analytics)</span>
+            </a>
             <span className="text-muted-foreground text-xs">•</span>
             <a
               href="/support"

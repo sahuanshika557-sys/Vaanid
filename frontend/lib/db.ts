@@ -42,4 +42,3 @@ export function runPythonDbApi(args: string[]): Record<string, unknown> {
     }
   }
 }
-
