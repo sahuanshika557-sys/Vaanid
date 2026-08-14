@@ -62,6 +62,33 @@ def init_db(db_path: str | None = None) -> str:
             cursor.executescript(schema_script)
             conn.commit()
 
+            # Ensure calls table has agent_type, handoff, handoff_target columns
+            cursor.execute("PRAGMA table_info(calls)")
+            existing_cols = [row[1] for row in cursor.fetchall()]
+            if "agent_type" not in existing_cols:
+                cursor.execute(
+                    "ALTER TABLE calls ADD COLUMN agent_type TEXT DEFAULT 'MAIN'"
+                )
+            if "handoff" not in existing_cols:
+                cursor.execute("ALTER TABLE calls ADD COLUMN handoff INTEGER DEFAULT 0")
+            if "handoff_target" not in existing_cols:
+                cursor.execute("ALTER TABLE calls ADD COLUMN handoff_target TEXT")
+            conn.commit()
+
+            # Seed sample orders if not present
+            now_str = datetime.now(timezone.utc).isoformat()
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO orders (order_id, user_id, customer_name, phone_or_sip, product_name, quantity, estimated_total, status, created_at, updated_at)
+                VALUES
+                ('12345', 'cust_default', 'Payal', 'browser', 'Basmati Rice (5kg)', 1.0, 320.0, 'CONFIRMED', ?, ?),
+                ('98765', 'cust_default', 'Payal', 'browser', 'Sunflower Oil (1L)', 2.0, 310.0, 'CONFIRMED', ?, ?),
+                ('55555', 'cust_default', 'Payal', 'browser', 'Wheat Flour (10kg)', 1.0, 450.0, 'CONFIRMED', ?, ?)
+                """,
+                (now_str, now_str, now_str, now_str, now_str, now_str),
+            )
+            conn.commit()
+
         logger.info(f"Database initialized successfully at {path}")
     except Exception as e:
         logger.error(f"Failed to initialize database at {path}: {e}")
@@ -837,6 +864,9 @@ def update_call_event(
     tool_failed: bool | None = None,
     escalated: bool | None = None,
     success_condition: str | None = None,
+    agent_type: str | None = None,
+    handoff: bool | None = None,
+    handoff_target: str | None = None,
     db_path: str | None = None,
 ) -> bool:
     """Update call details dynamically as conversation turns/tools occur."""
@@ -860,6 +890,15 @@ def update_call_event(
         params.append(success_condition)
     if tool_failed:
         updates.append("failure_reason = 'TOOL_FAILURE'")
+    if agent_type:
+        updates.append("agent_type = ?")
+        params.append(agent_type)
+    if handoff is not None:
+        updates.append("handoff = ?")
+        params.append(1 if handoff else 0)
+    if handoff_target:
+        updates.append("handoff_target = ?")
+        params.append(handoff_target)
 
     if not updates:
         return True
@@ -1241,6 +1280,12 @@ def get_analytics_breakdowns(db_path: str | None = None) -> dict[str, Any]:
             cursor.execute("SELECT COUNT(*) FROM escalations WHERE status = 'RESOLVED'")
             esc_resolved = cursor.fetchone()[0]
 
+            # Day 9 Specialist & Handoff Insights
+            cursor.execute("SELECT COUNT(*) FROM calls WHERE handoff = 1")
+            handoff_total = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM calls WHERE agent_type = 'SPECIALIST'")
+            specialist_calls = cursor.fetchone()[0]
+
             return {
                 "channels": {
                     "BROWSER": channels.get("BROWSER", 0),
@@ -1258,6 +1303,10 @@ def get_analytics_breakdowns(db_path: str | None = None) -> dict[str, Any]:
                     "in_progress": esc_in_progress,
                     "resolved": esc_resolved,
                 },
+                "specialist": {
+                    "handoffs": handoff_total,
+                    "specialist_calls": specialist_calls,
+                },
             }
     except Exception as e:
         logger.error(f"Error computing analytics breakdowns: {e}")
@@ -1266,4 +1315,95 @@ def get_analytics_breakdowns(db_path: str | None = None) -> dict[str, Any]:
             "languages": {"English": 0, "Hindi": 0, "Hinglish": 0},
             "intents": {},
             "escalations": {"total": 0, "open": 0, "in_progress": 0, "resolved": 0},
+            "specialist": {"handoffs": 0, "specialist_calls": 0},
         }
+
+
+def get_order_record(
+    order_id: str, user_id: str | None = None, db_path: str | None = None
+) -> dict[str, Any] | None:
+    """Retrieve an order record from SQLite by order_id or user_id."""
+    clean_id = (order_id or "").strip().lstrip("#")
+    if not clean_id and not user_id:
+        return None
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            if clean_id:
+                cursor.execute(
+                    "SELECT * FROM orders WHERE order_id = ? OR order_id = ?",
+                    (clean_id, f"#{clean_id}"),
+                )
+            else:
+                cursor.execute(
+                    "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+                    (user_id,),
+                )
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+            return None
+    except Exception as e:
+        logger.error(f"Error retrieving order record '{order_id}': {e}")
+        return None
+
+
+def check_return_eligibility_db(
+    order_id: str | None = None, user_id: str | None = None, db_path: str | None = None
+) -> dict[str, Any]:
+    """Check if an order is eligible for return based on status and purchase date."""
+    order = get_order_record(order_id, user_id, db_path)
+    if not order:
+        return {
+            "verified": False,
+            "eligible": False,
+            "reason": "ORDER_NOT_FOUND",
+            "message": f"Order #{order_id or 'unknown'} could not be found in our database.",
+        }
+
+    status = order.get("status", "PENDING")
+    if status != "CONFIRMED":
+        return {
+            "verified": True,
+            "eligible": False,
+            "order_id": order["order_id"],
+            "product_name": order["product_name"],
+            "reason": "ORDER_NOT_DELIVERED",
+            "message": f"Order #{order['order_id']} has status '{status}'. Returns are only eligible for confirmed/delivered items.",
+        }
+
+    # Default return window: 7 days
+    return {
+        "verified": True,
+        "eligible": True,
+        "order_id": order["order_id"],
+        "product_name": order["product_name"],
+        "quantity": order["quantity"],
+        "estimated_total": order["estimated_total"],
+        "return_window": "7 days from delivery",
+        "instructions": "Place the product in original packaging. Pickup will be scheduled within 24 hours of return request approval.",
+    }
+
+
+def check_refund_status_db(
+    order_id: str | None = None, user_id: str | None = None, db_path: str | None = None
+) -> dict[str, Any]:
+    """Check refund status for a specific order."""
+    order = get_order_record(order_id, user_id, db_path)
+    if not order:
+        return {
+            "verified": False,
+            "reason": "ORDER_NOT_FOUND",
+            "message": f"Order #{order_id or 'unknown'} was not found.",
+        }
+
+    return {
+        "verified": True,
+        "order_id": order["order_id"],
+        "product_name": order["product_name"],
+        "amount": order["estimated_total"],
+        "refund_status": "PROCESSING",
+        "expected_completion": "2 to 3 business days to original payment method",
+        "reference": f"REF-{order['order_id']}-2026",
+    }

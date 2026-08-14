@@ -118,32 +118,50 @@ interface EscalationInfo {
   message?: string;
 }
 
+interface HandoffInfo {
+  status: 'transferring' | 'active';
+  agent: string;
+  agentName: string;
+}
+
 function AgentStatusHeader({
   agentState,
   catalogueInfo,
   escalationInfo,
+  handoffInfo,
 }: {
   agentState?: string;
   catalogueInfo?: CatalogueInfo | null;
   escalationInfo?: EscalationInfo | null;
+  handoffInfo?: HandoffInfo | null;
 }) {
   let badgeColor = 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
   let dotColor = 'bg-emerald-400 animate-pulse';
-  let label = '🎤 Listening to you';
+  let label = handoffInfo?.agentName
+    ? `✨ ${handoffInfo.agentName}`
+    : '🎤 Listening to you';
 
-  if (agentState === 'speaking') {
+  if (handoffInfo?.status === 'transferring') {
+    badgeColor = 'border-amber-500/30 bg-amber-500/10 text-amber-400';
+    dotColor = 'bg-amber-400 animate-ping';
+    label = `🔄 Connecting to ${handoffInfo.agentName}...`;
+  } else if (agentState === 'speaking') {
     badgeColor = 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400';
     dotColor = 'bg-indigo-400 animate-bounce';
-    label = '🔊 Your assistant is speaking';
+    label = handoffInfo?.agentName
+      ? `🔊 ${handoffInfo.agentName} is speaking`
+      : '🔊 Your assistant is speaking';
   } else if (agentState === 'thinking') {
     badgeColor = 'border-amber-500/30 bg-amber-500/10 text-amber-400';
     dotColor = 'bg-amber-400 animate-ping';
     label =
-      escalationInfo?.status === 'creating'
-        ? '📑 Preparing human support request...'
-        : catalogueInfo?.status === 'checking'
-          ? '🔎 Checking catalogue...'
-          : '💭 Anisha is thinking...';
+      handoffInfo?.status === 'transferring'
+        ? `🔄 Connecting to ${handoffInfo.agentName}...`
+        : escalationInfo?.status === 'creating'
+          ? '📑 Preparing human support request...'
+          : catalogueInfo?.status === 'checking'
+            ? '🔎 Checking catalogue...'
+            : '💭 Assistant is thinking...';
   } else if (agentState === 'connecting' || agentState === 'initializing') {
     badgeColor = 'border-blue-500/30 bg-blue-500/10 text-blue-400';
     dotColor = 'bg-blue-400 animate-spin';
@@ -161,6 +179,36 @@ function AgentStatusHeader({
         <span className={cn('size-2 rounded-full', dotColor)} />
         <span>{label}</span>
       </div>
+
+      {/* Specialist Agent Handoff Visual Activity Card */}
+      <AnimatePresence>
+        {handoffInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className="pointer-events-auto max-w-sm rounded-xl border border-indigo-500/40 bg-slate-950/90 px-4 py-3 shadow-2xl backdrop-blur-md"
+          >
+            {handoffInfo.status === 'transferring' ? (
+              <div className="flex items-center gap-2.5 text-xs font-semibold text-amber-400">
+                <span className="size-2.5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+                <span>🔄 Connecting to {handoffInfo.agentName}...</span>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1 text-xs">
+                <div className="flex items-center gap-2 font-bold text-indigo-400">
+                  <span className="size-2 animate-pulse rounded-full bg-indigo-400" />
+                  <span>✨ Specialist Connected</span>
+                </div>
+                <div className="text-sm font-extrabold text-white">
+                  {handoffInfo.agentName} is helping you
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Escalation Status Activity Card */}
       <AnimatePresence>
@@ -295,6 +343,7 @@ export function AgentSessionView_01({
   const { state: agentState } = useAgent();
   const [escalationInfo, setEscalationInfo] = useState<EscalationInfo | null>(null);
   const [catalogueInfo, setCatalogueInfo] = useState<CatalogueInfo | null>(null);
+  const [handoffInfo, setHandoffInfo] = useState<HandoffInfo | null>(null);
 
   const controls: AgentControlBarControls = {
     leave: true,
@@ -332,7 +381,7 @@ export function AgentSessionView_01({
     }
   }, [messages]);
 
-  // Listen to LiveKit data channel events for catalogue_status and escalation_status
+  // Listen to LiveKit data channel events for catalogue_status, escalation_status, and agent_handoff
   useEffect(() => {
     const room = session.room;
     if (!room) return;
@@ -343,6 +392,24 @@ export function AgentSessionView_01({
       kind?: unknown,
       topic?: string
     ) => {
+      if (topic === 'agent_handoff') {
+        try {
+          const strVal = new TextDecoder().decode(payload);
+          const parsed = JSON.parse(strVal);
+          setHandoffInfo({
+            status: parsed.status,
+            agent: parsed.agent,
+            agentName: parsed.agent_name,
+          });
+          if (parsed.status === 'active') {
+            setTimeout(() => setHandoffInfo(null), 8000);
+          }
+        } catch (err) {
+          console.warn('Failed to parse agent_handoff event:', err);
+        }
+        return;
+      }
+
       if (topic === 'catalogue_status') {
         try {
           const strVal = new TextDecoder().decode(payload);
@@ -411,6 +478,7 @@ export function AgentSessionView_01({
         agentState={agentState}
         catalogueInfo={catalogueInfo}
         escalationInfo={escalationInfo}
+        handoffInfo={handoffInfo}
       />
 
       <Fade top className="absolute inset-x-4 top-0 z-10 h-40" />
