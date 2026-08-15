@@ -25,7 +25,8 @@ Over the past 10 days of the **#VoiceForBharat** challenge, I designed, engineer
 
 This comprehensive technical article breaks down the system architecture, code-mixed language processing, multi-agent routing mechanics, consent-gated SQLite memory, zero-hallucination catalogue verification, real-time analytics observability, and the actual engineering lessons learned while shipping this project.
 
-![Dukandar AI Dashboard Overview - Live Metrics & Voice Assistant Platform](docs/images/dashboard_overview.png)
+<!-- DEVTO_IMAGE_UPLOAD: dashboard-overview.png -->
+![Dukandar AI Dashboard Overview - Live Metrics & Voice Assistant Platform](./docs/blog-images/dashboard-overview.png)
 *Figure 1: Dukandar AI Premium Dark Dashboard — Real-time DB Call Metrics, Live Assistant Status & Bilingual Navigation.*
 
 ---
@@ -52,9 +53,12 @@ Voice is the most intuitive interface human beings possess. A multilingual voice
 
 ## ⚡ 3. System Architecture & Multilingual Pipeline
 
+### Frontend Experience & Voice Interface
+
 **Dukandar AI** combines state-of-the-art real-time audio transport with high-performance STT, LLM reasoning, and ultra-fast neural speech synthesis:
 
-![Dukandar AI Voice Assistant Central Hub & Quick Actions Panel](docs/images/voice_assistant_card.png)
+<!-- DEVTO_IMAGE_UPLOAD: voice-agent-ui.png -->
+![Dukandar AI Voice Assistant Central Hub & Quick Actions Panel](./docs/blog-images/voice-agent-ui.png)
 *Figure 2: Voice Assistant Hub — Central WebRTC Mic Controls, Organic Audio Waveform & One-Touch Quick Actions.*
 
 ```mermaid
@@ -217,19 +221,22 @@ On subsequent calls, the agent recognizes returning callers instantly:
 
 A common failure mode in commercial LLM bots is guessing product prices or inventing stock numbers. **Dukandar AI** enforces a strict **Zero-Hallucination Guardrail**.
 
+### Local Commerce Experience & Product Catalogue
+
 Whenever price, stock, or total cost is requested, the agent **MUST** call executable tools:
 
 1. `lookup_product(product_query)`: Queries local catalogue dataset (`data/products.csv`) for verified unit pricing, stock quantity, packaging size, and seller location.
 2. `calculate_order_total(product_query, quantity)`: Checks available stock, validates requested quantity, applies tax/delivery rules, and returns the subtotal in INR.
+
+<!-- DEVTO_IMAGE_UPLOAD: local-commerce-ui.png -->
+![Dukandar AI Local Store Product Catalogue Grid with Item Images](./docs/blog-images/local-commerce-ui.png)
+*Figure 3: Interactive Local Store Product Catalogue — Item Images, Category Filter Chips, Live Stock Badges & Unit Pricing.*
 
 ### Offline & Tool Failure Resilience:
 If tool execution fails or the catalogue dataset is unreachable (`SIMULATE_CATALOGUE_FAILURE=true`), the LLM is explicitly forbidden from guessing:
 
 > ⚠️ **Agent Fallback Response**:  
 > *"I apologize, but our product catalogue is currently unreachable. I don't want to give you an incorrect price. Please try again in a few moments."*
-
-![Dukandar AI Local Store Product Catalogue Grid with Item Images](docs/images/product_catalogue_grid.png)
-*Figure 3: Interactive Local Store Product Catalogue — Item Images, Category Filter Chips, Live Stock Badges & Unit Pricing.*
 
 ---
 
@@ -304,6 +311,10 @@ Every call session is monitored by the analytics engine to compute quality metri
 * **`INCOMPLETE_TASK`**: Call ended without clear resolution.
 
 All analytics are rendered live on the interactive Next.js dashboard at `http://localhost:3000/analytics`.
+
+<!-- DEVTO_IMAGE_UPLOAD: dashboard-overview.png -->
+![Dukandar AI Dashboard Overview - Real-Time Call Analytics & Live Performance Metrics](./docs/blog-images/dashboard-overview.png)
+*Figure 4: Real-Time Call Analytics & Live Performance Dashboard.*
 
 ---
 
