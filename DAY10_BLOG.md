@@ -1,79 +1,92 @@
+---
+title: "Building Dukandar AI: A Multilingual Voice AI Agent for Local Commerce 🇮🇳"
+published: true
+description: "A complete deep-dive into building Dukandar AI: a low-latency (~55ms TTS), Hinglish-native voice agent using LiveKit, Murf Falcon TTS, Deepgram Nova-3, Gemini 3.5, multi-agent handoffs & SQLite memory."
+tags: ai, python, webdev, voiceai
+canonical_url: https://github.com/sahuanshika557-sys/murf-ai
+---
+
 # Building a Multilingual Local Commerce AI Voice Agent — My 10-Day Voice AI Journey
 
-**Author**: Senior AI Engineer & Voice AI Developer  
-**Track**: Local Commerce  
-**Challenge**: 10 Days of Voice Agents — VoiceForBharat Edition  
-**Repository**: [https://github.com/sahuanshika557-sys/murf-ai](https://github.com/sahuanshika557-sys/murf-ai)  
+> 🏆 **Challenge**: 10 Days of Voice Agents — *VoiceForBharat Edition*  
+> 🏬 **Track**: Local Commerce  
+> 👤 **Author**: Senior AI Engineer & Voice AI Developer  
+> 📦 **GitHub Repository**: [github.com/sahuanshika557-sys/murf-ai](https://github.com/sahuanshika557-sys/murf-ai)  
 
 ---
 
-## 1. Introduction
+## 🌟 1. Introduction & Motivation
 
-Building voice AI applications for real-world commerce is fundamentally different from building text-based chatbots. In text chat, users tolerate latencies of 3–5 seconds and read structured tables. In voice interaction, a 1-second delay feels awkward, turn-taking is delicate, and users speak naturally in code-mixed dialects like Hinglish.
+Building voice AI applications for real-world commerce is fundamentally different from building text-based chatbots. 
 
-Over the past 10 days of the **#VoiceForBharat** challenge, I designed, built, and refined **Dukandar AI** — a production-grade, multilingual Local Commerce AI Voice Agent. This article breaks down the engineering journey, architectural decisions, code-mixed language handling, multi-agent handoff mechanics, database persistence, real data tool integration, and practical lessons learned along the way.
+In a text chat, users tolerate latencies of 3–5 seconds while watching typing indicators. In natural voice interaction, a 1-second delay creates awkward silence, turn-taking is delicate, and real human consumers speak fluidly in code-mixed dialects like **Hinglish** (*Hindi + English*).
 
----
+Over the past 10 days of the **#VoiceForBharat** challenge, I designed, engineered, and refined **Dukandar AI** (*दुकानदार AI*) — a production-grade, ultra-low latency, multilingual Local Commerce AI Voice Agent.
 
-## 2. The Problem
+This comprehensive technical article breaks down the system architecture, code-mixed language processing, multi-agent routing mechanics, consent-gated SQLite memory, zero-hallucination catalogue verification, real-time analytics observability, and the actual engineering lessons learned while shipping this project.
 
-Local commerce in India connects millions of neighbourhood stores (*kirana shops*, fresh produce vendors, local electronics stores) with local consumers. However, existing digital commerce models create significant friction:
-
-- **The Literacy & Language Barrier**: Millions of consumers prefer speaking in Hindi, Hinglish, or conversational speech rather than typing search terms into English mobile apps.
-- **Inventory Uncertainty**: Customers spend time making manual phone calls just to check if essential goods (e.g., 5kg Basmati Rice or MP Chakki Atta) are currently in stock.
-- **Post-Purchase Friction**: When items arrive damaged or payments fail, users struggle with confusing app menus to check return eligibility or reach human support.
-
-**Why Voice AI?** Voice is the most intuitive interface human beings possess. A multilingual voice agent capable of understanding mixed Hindi/English queries, retrieving verified inventory data, managing persistent customer relationships, and escalating complex financial disputes can democratize local commerce for everyone.
+![Dukandar AI Dashboard Overview - Live Metrics & Voice Assistant Platform](docs/images/dashboard_overview.png)
+*Figure 1: Dukandar AI Premium Dark Dashboard — Real-time DB Call Metrics, Live Assistant Status & Bilingual Navigation.*
 
 ---
 
-## 3. What I Built
+## 🎯 2. The Local Commerce Friction in India
 
-I built **Dukandar AI** — a responsive, low-latency, real-time voice assistant tailored for local commerce businesses.
+Local commerce connects millions of neighbourhood stores (*kirana shops*, fresh produce vendors, local bakeries, electronics outlets) with local residents. However, digital accessibility remains heavily fragmented:
 
-### Key Capabilities:
-1. **Real-Time Multilingual Voice Pipeline**: ~55ms TTS streaming latency in English, Hindi, and Hinglish.
-2. **Persistent Customer Memory**: SQLite-backed customer profiles with explicit consent management.
-3. **Real Data Catalogue Tools**: Instant product lookups (`lookup_product`) and order total calculations (`calculate_order_total`) connected to local inventory datasets (`data/products.csv`).
-4. **Specialist Agent Handoff**: Seamless, context-preserving handoffs between the Main Commerce Assistant and a dedicated Returns & Refunds Specialist Agent.
-5. **Consent-Gated Human Escalation**: Automated creation of structured support tickets with unique reference IDs (`LC-2026-XXXX`) for payment/refund disputes.
-6. **Outbound SIP Telephony**: Automated phone calls for order status updates via LiveKit SIP trunking and Linphone with opt-out safety.
-7. **Call Analytics Dashboard**: Real-time observability UI tracking call metrics, failure classifications, and channel performance.
+* 🗣️ **The Literacy & Language Barrier**: Millions of consumers prefer speaking in Hindi, Hinglish, or regional dialects rather than typing structured search queries into English mobile apps.
+* 📦 **Inventory & Pricing Uncertainty**: Customers repeatedly make manual phone calls just to check if basic essential goods (*e.g., 5kg Basmati Rice or MP Chakki Atta*) are currently in stock.
+* 🔄 **Post-Purchase Friction**: When items arrive damaged or payment gateway errors occur, customers get lost in complex menu trees trying to check return eligibility or reach human support.
+
+### Why Voice AI?
+Voice is the most intuitive interface human beings possess. A multilingual voice agent capable of:
+1. Understanding fluid code-mixed Hinglish queries
+2. Querying live inventory datasets with zero hallucination
+3. Maintaining persistent customer memory with strict user consent
+4. Seamlessly handing off complex refund requests to domain specialist agents
+5. Escalating financial disputes to human support via structured tickets
+
+...can democratize local commerce access for millions of citizens.
 
 ---
 
-## 4. System Architecture
+## ⚡ 3. System Architecture & Multilingual Pipeline
+
+**Dukandar AI** combines state-of-the-art real-time audio transport with high-performance STT, LLM reasoning, and ultra-fast neural speech synthesis:
+
+![Dukandar AI Voice Assistant Central Hub & Quick Actions Panel](docs/images/voice_assistant_card.png)
+*Figure 2: Voice Assistant Hub — Central WebRTC Mic Controls, Organic Audio Waveform & One-Touch Quick Actions.*
 
 ```mermaid
 flowchart TD
-    subgraph Client_Layer ["Client & Interface Layer"]
-        UI["🌐 Next.js Web Frontend\n(http://localhost:3000)"]
-        SIP["📱 Linphone / Phone\n(SIP Outbound Call)"]
+    subgraph Client_Layer ["🌐 Client & Interface Layer"]
+        UI["💻 Next.js 15 Web Frontend\n(http://localhost:3000)"]
+        SIP["📱 Linphone / Phone Network\n(Outbound SIP Telephony)"]
         DASH["📊 Analytics & Support Portal\n(/analytics & /support)"]
     end
 
-    subgraph Transport_Layer ["Real-Time Transport"]
-        LK["⚡ LiveKit WebRTC & SIP Gateway"]
+    subgraph Transport_Layer ["⚡ Real-Time Transport"]
+        LK["📡 LiveKit WebRTC & SIP Gateway"]
     end
 
-    subgraph Pipeline_Layer ["Voice AI Pipeline"]
+    subgraph Pipeline_Layer ["🎙️ Voice AI Pipeline"]
         STT["🎤 Deepgram STT\n(Nova-3 Multilingual)"]
         LLM["🧠 Google Gemini LLM\n(gemini-3.5-flash-lite)"]
-        TTS["🔊 Murf Falcon TTS\n(Anisha Voice / ~55ms)"]
+        TTS["🔊 Murf Falcon TTS\n(Anisha Voice / ~55ms Latency)"]
         VAD["🎛️ Silero VAD &\nLiveKit Turn Detector"]
     end
 
-    subgraph Multi_Agent_Core ["Multi-Agent Core (backend/src/agent.py)"]
-        MAIN["🤖 Main Commerce Agent\n(Anisha - Catalogue & Store Info)"]
-        SPEC["🤖 Returns & Refunds Specialist\n(Specialist Agent Target)"]
+    subgraph Multi_Agent_Core ["🤖 Multi-Agent Core (backend/src/agent.py)"]
+        MAIN["🛍️ Main Commerce Agent\n(Anisha - Catalogue & Store Info)"]
+        SPEC["📦 Returns & Refunds Specialist\n(Specialist Agent Target)"]
     end
 
-    subgraph Persistence_Tools ["Tools & Persistence Engine"]
+    subgraph Persistence_Tools ["⚙️ Tools & Persistence Engine"]
         MEM["🧠 Persistent Memory (customers table)"]
         CAT["🛒 Catalogue Tool (lookup_product)"]
         CALC["🧮 Order Calculator (calculate_order_total)"]
         RET["📦 Return/Refund Tools (check_refund_status)"]
-        ESC["👨💼 Escalation Tool (create_escalation)"]
+        ESC["👨‍💼 Escalation Tool (create_escalation)"]
         DB[("💾 SQLite Database\nbackend/local_commerce_memory.db")]
     end
 
@@ -104,56 +117,83 @@ flowchart TD
     DASH <-->|"Next.js API & db_api.py"| DB
 ```
 
----
+### Component Breakdown:
 
-## 5. Core Components
-
-1. **Speech-to-Text (STT)**: **Deepgram Nova-3** configured with multi-language detection (`language="multi"`), offering accurate transcription for English, Hindi, and code-mixed speech.
-2. **LLM Engine**: **Google Gemini 3.5 Flash Lite**, chosen for low-latency instruction following, tool calling, and bilingual dialogue generation.
-3. **Text-to-Speech (TTS)**: **Murf Falcon TTS** (`voice="Anisha"`), streaming audio chunk-by-chunk with ~55ms latency for natural conversational cadence.
-4. **Real-Time Transport**: **LiveKit Agents SDK**, handling WebRTC peer connections, full-duplex audio streaming, and data channel event publishing.
-5. **Frontend UI**: Built with **Next.js 15**, Tailwind CSS, and Shadcn UI components. Features 5 distinct agent visual states (`READY`, `CONNECTING`, `LISTENING`, `SPEAKING`, `ENDED`), mic permission fallbacks, and transcript displays.
-6. **Database Engine**: **SQLite** (`backend/local_commerce_memory.db`) managing 6 specialized tables: `customers`, `orders`, `call_logs`, `opt_outs`, `escalations`, and `calls`.
-7. **Function Tools**: Structured `@function_tool` methods exposing Python logic directly to LLM decision layers.
-
----
-
-## 6. Feature Journey (Days 1–10 Evolution)
-
-- **Day 1 — Voice Agent Foundation**: Implemented core STT → LLM → TTS pipeline over LiveKit WebRTC using Python and Murf Falcon TTS.
-- **Day 2 — Persona & Guardrails**: Standardized agent persona (Anisha), call objectives, system prompt protections, and strict order placement refusal guardrails.
-- **Day 3 — Responsive Frontend & UX**: Built state-aware Next.js frontend supporting 5 visual agent states, microphone permission handling, and animated waveforms.
-- **Day 4 — Persistent Customer Memory**: Integrated SQLite database layer to recognize returning customers, store preferences, and enforce explicit user consent.
-- **Day 5 — Real Data Catalogue Tools**: Created `lookup_product` and `calculate_order_total` function tools backed by local inventory datasets (`data/products.csv`).
-- **Day 6 — Outbound SIP Telephony**: Built automated outbound call dispatcher (`dial.py`) over LiveKit SIP trunking and Linphone with opt-out compliance.
-- **Day 7 — Human Support Escalation**: Designed consent-gated escalation tool generating reference IDs (`LC-2026-XXXX`) with a dedicated support management portal (`/support`).
-- **Day 8 — Call Analytics Dashboard**: Built complete call lifecycle tracker and analytics UI (`/analytics`) measuring call volume, success rates, duration, and failure reasons.
-- **Day 9 — Specialist Agent Handoff**: Built context-preserving multi-agent routing between Main Commerce Agent and Returns & Refunds Specialist.
-- **Day 10 — Portfolio & Documentation Polish**: Comprehensive documentation, audit, architecture diagrams, evidence matrix, and release preparation.
+| Layer | Technology | Key Responsibility |
+| :--- | :--- | :--- |
+| **STT** | **Deepgram Nova-3** | Multi-language detection (`language="multi"`) handling English, Hindi & Hinglish transcriptions. |
+| **LLM** | **Google Gemini 3.5 Flash Lite** | Low-latency instruction following, tool calling, and bilingual dialogue generation. |
+| **TTS** | **Murf Falcon TTS** (`Anisha`) | Streaming audio chunk-by-chunk with ~55ms latency for natural Indian English/Hindi tone. |
+| **Transport** | **LiveKit Agents SDK** | Full-duplex WebRTC audio streaming, turn detection, and custom data channel events. |
+| **Frontend** | **Next.js 15 + Tailwind CSS** | Interactive UI with 5 agent visual states (`READY`, `CONNECTING`, `LISTENING`, `SPEAKING`, `ENDED`). |
+| **Database** | **SQLite** (`backend/...db`) | 6 relational tables (`customers`, `orders`, `call_logs`, `opt_outs`, `escalations`, `calls`). |
 
 ---
 
-## 7. Multilingual Voice Experience
+## 📅 4. The 10-Day Build Evolution
 
-A critical requirement for local commerce in India is handling **code-mixing (Hinglish)** natively. Customers rarely speak in rigid formal English or complex pure Hindi.
+Below is the step-by-step feature evolution built over the 10-day sprint:
 
-### Code-Mixed Examples:
-
-- **Hinglish Query**: *"Basmati rice kitne ka hai aur stock mein hai kya?"*
-  - **Agent Response**: *"Basmati Rice 5 kg pack is listed at ₹320 with 25 units available in stock."*
-- **Devanagari Hindi Query**: *"बासमती चावल कितने के हैं?"*
-  - **Agent Response**: *"बासमती चावल की सूचीबद्ध कीमत ₹320 है, और 25 यूनिट्स उपलब्ध हैं।"*
-- **Budget Query**: *"Mujhe ek phone chahiye under 15000."*
-  - **Agent Response**: *"Main aapke budget 15000 INR ke andar available items check kar sakti hoon."*
-
-The agent detects the user's active language register on every utterance and mirrors their choice dynamically without requiring manual language toggles.
+```
+Day 01 ──> 🎙️ Core STT → LLM → TTS Pipeline Setup
+Day 02 ──> 🛡️ Standardized Persona (Anisha) & Commercial Guardrails
+Day 03 ──> 💻 Responsive Frontend UI (5 Agent States + Waveform Visualizers)
+Day 04 ──> 🧠 Persistent Customer Memory & Opt-in Consent System
+Day 05 ──> 🛒 Real Product Catalogue Tools (products.csv + Zero-Hallucination)
+Day 06 ──> 📱 Outbound SIP Telephony (Automated Phone Calls via Linphone)
+Day 07 ──> 👨‍💼 Human Support Escalation Engine (Ticket IDs: LC-2026-XXXX)
+Day 08 ──> 📊 Interactive Call Analytics Dashboard & Failure Classification
+Day 09 ──> 🔀 Multi-Agent Handoff Architecture (Main Commerce <-> Specialist)
+Day 10 ──> 💎 Full Architecture Audit, Documentation Polish & Release
+```
 
 ---
 
-## 8. Customer Memory & Consent Management
+## 🗣️ 5. Code-Mixed Multilingual Voice Experience (Hinglish/Hindi/English)
 
-The agent maintains persistent customer relationships across sessions via SQLite:
+In India, voice interfaces fail if they force users into rigid English or overly formal Devanagari Hindi. **Dukandar AI** dynamically tracks the user's spoken register and responds naturally in the same style.
 
+### Real Conversation Samples:
+
+> 💬 **Hinglish Code-Mixed Inquiry**:  
+> **Customer**: *"Basmati rice kitne ka hai aur stock mein hai kya?"*  
+> **Dukandar AI**: *"Basmati Rice 5kg pack is listed at ₹320 with 25 units available in stock."*  
+
+> 💬 **Devanagari Hindi Inquiry**:  
+> **Customer**: *"बासमती चावल कितने के हैं?"*  
+> **Dukandar AI**: *"बासमती चावल की सूचीबद्ध कीमत ₹320 है, और 25 यूनिट्स उपलब्ध हैं।"*  
+
+> 💬 **Budget Filter Query**:  
+> **Customer**: *"Mujhe ek phone chahiye under 15000."*  
+> **Dukandar AI**: *"Main aapke budget 15,000 INR ke andar available items check kar sakti hoon. Hamare paas Redmi Note 13 standard model ₹13,999 mein available hai."*  
+
+---
+
+## 🧠 6. Consent-Gated Customer Memory Engine
+
+Customer memory elevates a voice bot into a personal shopping assistant. However, storing user details without consent violates privacy.
+
+### The Strict Opt-In Consent Flow:
+
+```
+[User Utterance] ──> "My name is Ramesh and I prefer morning delivery."
+                           │
+                           ▼
+[Agent Detection] ──> Extracts potential facts (Name, Delivery Preference)
+                           │
+                           ▼
+[Agent Asks Consent] ──> "Would you like me to remember your name and morning preference for future calls?"
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+      [User: "Yes, remember it"]  [User: "No, don't save"]
+             │                           │
+             ▼                           ▼
+   Execute save_caller_memory      Discard temporary data
+   (Commits to SQLite)             (Zero DB write)
+```
+
+### Database Schema (`customers` table):
 ```sql
 CREATE TABLE IF NOT EXISTS customers (
     user_id TEXT PRIMARY KEY,
@@ -168,105 +208,125 @@ CREATE TABLE IF NOT EXISTS customers (
 );
 ```
 
-### The Consent Rule:
-The agent **NEVER** saves customer facts automatically without permission.
-
-1. **User**: *"My name is Ramesh and I prefer morning delivery."*
-2. **Agent**: *"Would you like me to remember your name and morning delivery preference for future calls?"*
-3. **User**: *"Yes, remember it."* (or *"Haan, yaad rakhna"*)
-4. **Agent Tool**: Calls `save_caller_memory` to commit the data.
-5. **Next Call**: Recognizes user immediately: *"Welcome back, Ramesh! How can I help you today?"*
+On subsequent calls, the agent recognizes returning callers instantly:  
+> *"Welcome back Ramesh! Should I check availability for your usual 5kg Basmati Rice order?"*
 
 ---
 
-## 9. Real Data Tools vs. LLM Hallucination Prevention
+## 🛡️ 7. Zero-Hallucination Inventory & Order Tools
 
-A common failure mode in commercial voice agents is allowing LLMs to guess product prices or confirm orders hypothetically. **Dukandar AI** enforces a **Zero-Hallucination Guardrail**.
+A common failure mode in commercial LLM bots is guessing product prices or inventing stock numbers. **Dukandar AI** enforces a strict **Zero-Hallucination Guardrail**.
 
-If a user asks about pricing, stock, or order totals, the LLM is **forced** to execute real function tools:
+Whenever price, stock, or total cost is requested, the agent **MUST** call executable tools:
 
-- `lookup_product(product_query)`: Queries `data/products.csv` for unit price, stock quantity, unit size, and seller location.
-- `calculate_order_total(product_query, quantity)`: Validates available inventory against requested quantity and calculates subtotal in INR.
+1. `lookup_product(product_query)`: Queries local catalogue dataset (`data/products.csv`) for verified unit pricing, stock quantity, packaging size, and seller location.
+2. `calculate_order_total(product_query, quantity)`: Checks available stock, validates requested quantity, applies tax/delivery rules, and returns the subtotal in INR.
 
-If tools fail or are offline (`SIMULATE_CATALOGUE_FAILURE=true`), the agent refuses to guess:
-> *"Sorry, the product catalogue is currently unreachable. I don't want to guess the price. Please try again in a moment."*
+### Offline & Tool Failure Resilience:
+If tool execution fails or the catalogue dataset is unreachable (`SIMULATE_CATALOGUE_FAILURE=true`), the LLM is explicitly forbidden from guessing:
 
----
+> ⚠️ **Agent Fallback Response**:  
+> *"I apologize, but our product catalogue is currently unreachable. I don't want to give you an incorrect price. Please try again in a few moments."*
 
-## 10. Human Support Escalation Workflow
-
-When high-stakes issues occur (e.g. money deducted without order confirmation or damaged goods), autonomous resolution is unsafe. The agent pauses problem-solving and triggers the **Day 7 Escalation Engine**.
-
-### Mandatory Consent Flow:
-1. **Agent Explanation**: *"I can send a short summary of this issue to our support team. It will include your name, issue summary, and preferred contact method. May I share that with them?"*
-2. **User Consent**: *"Yes, please share."*
-3. **Tool Execution**: `create_escalation(...)` creates a ticket in the `escalations` SQLite table.
-4. **Confirmation**: Agent speaks reference ID: *"Your support request has been created. Reference ID: LC-2026-0001."*
-
-Tickets can be viewed and managed in real time on the Next.js support portal at `http://localhost:3000/support`.
+![Dukandar AI Local Store Product Catalogue Grid with Item Images](docs/images/product_catalogue_grid.png)
+*Figure 3: Interactive Local Store Product Catalogue — Item Images, Category Filter Chips, Live Stock Badges & Unit Pricing.*
 
 ---
 
-## 11. Specialist Agent Handoff Mechanics
+## 🔀 8. Context-Preserving Multi-Agent Handoff Mechanics
 
-In Day 9, the architecture expanded from a single assistant to a **Multi-Agent System**.
+In Day 9, the architecture evolved from a monolithic assistant into a specialized **Multi-Agent Network**:
 
 ```
-Main Commerce Agent (Anisha)
-       │
-       ▼ (User intent: Return / Refund / Damaged Item)
-  Tool: handoff_to_returns_specialist
-       │
-       ▼
-Returns & Refunds Specialist Agent
-       │
-       ▼ (User query: Unrelated product availability question)
-  Tool: handoff_to_main_agent
-       │
-       ▼
-Main Commerce Agent
+                  ┌──────────────────────────────┐
+                  │ Main Commerce Agent (Anisha) │
+                  │  (Store Info & Catalogue)    │
+                  └──────────────┬───────────────┘
+                                 │
+                 User Intent: "I want to return item"
+               Tool: handoff_to_returns_specialist
+                                 │
+                                 ▼
+               ┌───────────────────────────────────┐
+               │ Returns & Refunds Specialist Agent│
+               │ (Eligibility, Order Validation)   │
+               └─────────────────┬─────────────────┘
+                                 │
+                 User Intent: "What items do you sell?"
+                     Tool: handoff_to_main_agent
+                                 │
+                                 ▼
+                  ┌──────────────────────────────┐
+                  │ Main Commerce Agent (Anisha) │
+                  └──────────────────────────────┘
 ```
 
-### Context Preservation:
-When transferring, the Main Agent passes a structured `HandoffContext` object (user ID, order ID, intent, active language) to the Specialist so the user is never asked to repeat themselves:
+### Context Preservation Guarantee:
+When transitioning between agents, the system passes a structured `HandoffContext` containing caller history, order details, user intent, and active language register. 
 
-> **Specialist**: *"Hi Payal! I received your return request context. I'll help you check the return eligibility for order #12345 right away."*
-
----
-
-## 12. Call Performance Analytics
-
-The Day 8 Call Analytics Engine tracks every call lifecycle in the SQLite `calls` table:
-
-- **Success Definition**: Customer objective completed (product query answered, order total calculated, order verified, or escalation ticket created).
-- **Failure Classification**: Categorized into `USER_HANGUP`, `INCOMPLETE_TASK`, `TOOL_FAILURE`, `API_FAILURE`, `NO_RESPONSE`, or `UNKNOWN`.
-- **Metrics Tracked**: Total call count, overall success rate, channel breakdown (Browser vs SIP), average call duration, language distribution, and intent breakdown.
-
-Analytics are rendered on the interactive dashboard at `http://localhost:3000/analytics`.
+The user **never** has to repeat information to the new agent:
+> **Specialist Agent**: *"Hello Ramesh! Anisha transferred your call regarding order #12345. I can see you received a damaged pack of Basmati Rice. Let me immediately check your return eligibility."*
 
 ---
 
-## 13. Real Engineering Challenges & Debug Lessons
+## 🚨 9. Human Support Escalation Workflow
 
-During development, several complex issues arose:
+When high-stakes financial issues arise (*e.g., payment deducted without order confirmation*), automated AI handling becomes risky. The agent pauses problem-solving and initiates the **Human Support Escalation Flow**:
 
-### Challenge 1: Windows Subprocess Execution for SQLite Bridge
-- **Problem**: Next.js API routes running on Windows could not directly compile native C++ SQLite addons (`better-sqlite3`) without native build tools.
-- **Investigation**: Python backend already had full access to `sqlite3`.
-- **Solution**: Built `backend/src/database/db_api.py` as a lightweight JSON CLI wrapper. Next.js API routes invoke `python db_api.py <command>` via `child_process.execFile()`, creating a clean, crash-free bridge.
-- **Lesson**: Decouple database bindings across language boundaries using clean IPC/CLI contracts when native binaries cause platform friction.
-
-### Challenge 2: Background Audio Noise in Multi-Language Speech Recognition
-- **Problem**: Background noise caused Deepgram STT to output garbled phonemes for Hinglish speech input.
-- **Investigation**: Standard VAD settings were cutting off quiet Hindi speech endings.
-- **Solution**: Integrated **Silero VAD** with LiveKit's `MultilingualModel` turn detector and active noise cancellation (`noise_cancellation.BVC()`).
-- **Lesson**: Turn detection and VAD tuning are just as critical as the STT model itself for spoken voice experience.
+1. **Explicit Permission**:  
+   *"I understand your payment was deducted. I can create an urgent ticket for our human support supervisor. May I submit this request with your phone number?"*
+2. **Ticket Creation**:  
+   Calls `create_escalation()` tool to generate a unique tracking ID (`LC-2026-0001`) in SQLite.
+3. **Spoken Reference ID**:  
+   *"Your support ticket has been created! Reference ID is LC-2026-0001. A representative will contact you within 2 hours."*
+4. **Live Dashboard View**:  
+   Tickets instantly appear on the operational support dashboard at `http://localhost:3000/support`.
 
 ---
 
-## 14. Code Examples from Implementation
+## 📊 10. Real-Time Call Analytics & Failure Diagnostics
 
-Here are 3 core code snippets from the actual codebase (`backend/src/agent.py`):
+Every call session is monitored by the analytics engine to compute quality metrics and track system performance:
+
+```
+         ┌────────────────────────────────────────────────────────┐
+         │              Call Analytics Dashboard                  │
+         ├───────────────────┬──────────────────┬─────────────────┤
+         │ Total Calls: 148  │ Success Rate: 92%│ Avg Latency: 55ms│
+         └───────────────────┴──────────────────┴─────────────────┘
+```
+
+### Automatic Call Outcome Classification:
+* **`COMPLETED`**: Customer objective fully resolved (*product lookup, total calculated, or escalation ticket created*).
+* **`USER_HANGUP`**: Customer disconnected mid-conversation.
+* **`TOOL_FAILURE`**: Inventory DB or pricing calculation tool threw an error.
+* **`API_FAILURE`**: Upstream LLM or STT service timeout.
+* **`INCOMPLETE_TASK`**: Call ended without clear resolution.
+
+All analytics are rendered live on the interactive Next.js dashboard at `http://localhost:3000/analytics`.
+
+---
+
+## 🛠️ 11. Real Engineering Lessons & Windows Debug Stories
+
+Building real-time voice agents on Windows presented unique engineering challenges:
+
+### 1. Windows Native C++ Addon Workaround (SQLite IPC Bridge)
+* **Problem**: Next.js serverless API routes on Windows failed to load compiled native C++ bindings for `better-sqlite3`.
+* **Root Cause**: Missing MSVC compiler toolchain on user runtime environment.
+* **Engineering Solution**: Instead of forcing complex C++ build tools, we built `backend/src/database/db_api.py` as a Python JSON CLI tool. Next.js API routes trigger Python via `child_process.execFile()`.
+* **Takeaway**: Decouple database layer access across runtime boundaries using clean IPC/CLI interfaces when native binaries create platform friction.
+
+### 2. VAD & Background Noise Sensitivity in Spoken Hindi
+* **Problem**: Standard Voice Activity Detection (VAD) cut off quiet word endings in spoken Hindi speech (*e.g., "...chahiye"*).
+* **Engineering Solution**: Tuned **Silero VAD** parameters paired with LiveKit's `MultilingualModel` turn detector and active background noise suppression (`noise_cancellation.BVC()`).
+* **Takeaway**: Turn detection tuning is just as crucial as the underlying LLM model for natural voice UX.
+
+---
+
+## 💻 12. Key Production Code Snippets
+
+Here are 3 core code implementations directly from `backend/src/agent.py`:
 
 ### 1. LiveKit Voice Pipeline & Agent Session Setup
 ```python
@@ -275,6 +335,7 @@ async def my_agent(ctx: JobContext):
     init_db()
     assistant = Assistant(ctx=ctx)
 
+    # Configure STT -> LLM -> TTS pipeline
     session = AgentSession(
         stt=deepgram.STT(model="nova-3", language="multi"),
         llm=google.LLM(model="gemini-3.5-flash-lite"),
@@ -312,7 +373,7 @@ async def lookup_product(self, context: RunContext, product_query: str) -> dict:
     return res
 ```
 
-### 3. Context-Preserving Specialist Handoff Tool
+### 3. Multi-Agent Handoff Tool
 ```python
 @function_tool
 async def handoff_to_returns_specialist(
@@ -336,110 +397,68 @@ async def handoff_to_returns_specialist(
 
 ---
 
-## 15. Key Engineering Lessons Learned
+## 🚀 13. 3-Step Developer Quickstart
 
-1. **Voice UX ≠ Text UX**: Spoken responses must be concise (<20 words per turn). Raw JSON, bullet points, or markdown formatting destroy the conversational flow.
-2. **Strict Guardrails are Mandatory**: Without explicit prompt rules, LLMs will attempt to confirm unverified transactions or make unauthorized promises.
-3. **Explicit Consent Protects Privacy**: Memory persistence must be opt-in. Asking user permission builds trust and complies with privacy standards.
-4. **Specialist Agents Improve Domain Accuracy**: Splitting complex tasks between a general assistant and specialized domain agents keeps system prompts focused and reduces hallucinations.
-5. **Observability is essential**: Without automated call outcome tracking and failure categorization, debugging voice agents in production is impossible.
+Want to run **Dukandar AI** locally on your machine?
 
----
-
-## 16. Beginner's Guide: Building Your First Voice Agent
-
-If you want to build a voice agent from scratch, follow this conceptual flow:
-
-```
-[Audio Input] ──> STT (Speech-to-Text)
-                     │
-                     ▼
-                 LLM Engine (Prompt + Tools + Memory)
-                     │
-                     ▼
-                 TTS (Text-to-Speech Audio Stream) ──> [Audio Output]
-```
-
-### 3 Step Quickstart:
-1. **Choose a Transport**: Use LiveKit Agents SDK for managed WebRTC connections.
-2. **Connect Components**: Combine Deepgram (STT) + Google Gemini (LLM) + Murf Falcon (TTS).
-3. **Add Tools**: Use `@function_tool` decorators in Python to give your agent access to real database queries.
-
----
-
-## 17. Setup Guide
-
-### Windows Setup:
 ```powershell
-# Clone repo
+# 1. Clone the repository
 git clone https://github.com/sahuanshika557-sys/murf-ai.git
 cd murf-ai
 
-# Install dependencies
-cd backend; uv sync; cd ..
-cd frontend; pnpm install; cd ..
-
-# Configure environment
+# 2. Setup environment variables
 cp backend/.env.example backend/.env.local
 cp frontend/.env.example frontend/.env.local
 
-# Launch entire application with one command
+# Add your credentials in backend/.env.local:
+# LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET
+# MURF_API_KEY, DEEPGRAM_API_KEY, GOOGLE_API_KEY
+
+# 3. Launch full stack with one command (Windows PowerShell)
 .\start_app.ps1
 ```
 
----
-
-## 18. Environment Variables Guide
-
-Store API credentials in `backend/.env.local`:
-
-```env
-LIVEKIT_URL=wss://your-project.livekit.cloud
-LIVEKIT_API_KEY=your_key
-LIVEKIT_API_SECRET=your_secret
-MURF_API_KEY=your_murf_key
-DEEPGRAM_API_KEY=your_deepgram_key
-GOOGLE_API_KEY=your_google_key
-```
-
-> [!CAUTION]
-> Never expose secrets or push `.env.local` files to public GitHub repositories!
+Open `http://localhost:3000` in Chrome, click **Connect**, and start speaking!
 
 ---
 
-## 19. Practical Testing Prompts
+## 🧪 14. Spoken Test Prompts Matrix
 
-Try these spoken test prompts with the running agent:
+Test the agent using these voice prompts:
 
-- **Product Inquiry (English)**: *"Do you have Basmati Rice available and how much is it?"*
-- **Catalogue & Stock Check (Hinglish)**: *"Basmati rice kitne ka hai aur kitna stock bacha hai?"*
-- **Hindi Inquiry (Hindi)**: *"मुझे 15000 रुपये के अंदर एक फोन चाहिए।"*
-- **Memory Consent**: *"My name is Payal and I like morning delivery."*
-- **Return Specialist Handoff**: *"Mera product damaged mila hai, mujhe return karna hai."*
-- **Human Escalation**: *"Mera payment kat gaya hai par order confirm nahi hua. Support se baat karwao!"*
-
----
-
-## 20. Security & Privacy Safeguards
-
-- Secrets strictly ignored in `.gitignore`.
-- Zero logging or storage of credit card numbers, CVVs, passwords, or OTPs.
-- Explicit caller consent enforced prior to storing personal memory.
+| Test Intent | Spoken Voice Input | Expected Behavior |
+| :--- | :--- | :--- |
+| **English Product Query** | *"Do you have Basmati Rice available and how much is it?"* | Runs `lookup_product`, speaks price & stock count. |
+| **Hinglish Stock Check** | *"Basmati rice kitne ka hai aur kitna stock bacha hai?"* | Responds in natural Hinglish with exact numbers. |
+| **Hindi Phone Query** | *"मुझे 15,000 रुपये के अंदर एक फोन चाहिए।"* | Filters catalogue by price limit & suggests options. |
+| **Memory Opt-In** | *"My name is Payal and I like morning delivery."* | Asks permission before committing memory to SQLite. |
+| **Specialist Handoff** | *"Mera product damaged mila hai, mujhe return karna hai."* | Transfers call to Returns Specialist with context. |
+| **Human Escalation** | *"Mera payment kat gaya hai par order confirm nahi hua!"* | Asks consent & creates support ticket (`LC-2026-XXXX`). |
 
 ---
 
-## 21. Future Improvements Roadmap
+## 🛡️ 15. Security, Privacy & Future Roadmap
 
-- **Database Scale**: Migrate local SQLite database to hosted serverless PostgreSQL (e.g., Supabase / Neon).
-- **Messaging Integration**: Trigger automated WhatsApp or SMS confirmation messages when escalation tickets are created.
-- **E-Commerce Webhooks**: Connect catalogue tools to live Shopify or WooCommerce APIs.
-- **Evaluation Benchmark**: Expand automated LLM-as-judge unit tests for voice responses.
+### Security & Privacy Safeguards:
+* 🔒 All API credentials strictly excluded via `.gitignore`.
+* 🛡️ Zero logging of payment passwords, CVVs, or financial tokens.
+* 📋 Explicit user consent required prior to storing personal memory.
+
+### Future Expansion Roadmap:
+* 🗄️ **Database Scaling**: Migrate local SQLite engine to serverless hosted PostgreSQL (Supabase / Neon).
+* 📱 **WhatsApp Integration**: Automatically dispatch order receipts and escalation tracking links via WhatsApp API.
+* 🛒 **Live E-Commerce Webhooks**: Sync inventory directly with live Shopify / WooCommerce store APIs.
 
 ---
 
-## 22. Conclusion
+## 🏆 16. Conclusion
 
-Completing the 10 Days of Voice Agents challenge has demonstrated how powerful low-latency voice AI can be when paired with proper architecture, real-time tools, persistent memory, and safety guardrails. Voice AI is not just a novelty — it is the future of accessible, frictionless digital commerce for Bharat.
+Completing the **#VoiceForBharat** challenge proved that building conversational voice AI requires more than just calling an LLM API. Low-latency performance, code-mixed natural language understanding, persistent memory guardrails, zero-hallucination tool execution, and clear multi-agent handoffs are required to make voice AI truly production-ready.
 
-- **GitHub Repository**: [https://github.com/sahuanshika557-sys/murf-ai](https://github.com/sahuanshika557-sys/murf-ai)
-- **Live Demo**: `[ADD YOUR LIVE URL]`
+If you found this breakdown valuable, consider starring the repository!
+
+* 📦 **GitHub Repository**: [github.com/sahuanshika557-sys/murf-ai](https://github.com/sahuanshika557-sys/murf-ai)  
+* 💬 Let me know your thoughts or questions in the comments below!  
+
+---
+*#VoiceForBharat #VoiceAI #Python #Nextjs #AI #LiveKit #MurfAI #Deepgram #Gemini #WebDev #BuildInPublic*

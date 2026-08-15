@@ -26,6 +26,17 @@ The **Local Commerce AI Voice Agent** is a voice-first conversational AI built s
 - **Outbound Voice Telephony**: Make automated SIP telephone calls for order status updates with opt-out compliance.
 - **Real-Time Call Analytics**: Monitor call volume, success rates, duration trends, and failure reasons on an interactive dashboard.
 
+### 🖼️ UI Screenshots & Platform Showcase:
+
+![Dukandar AI Dashboard Overview](docs/images/dashboard_overview.png)
+*Figure 1: Dukandar AI Premium Dark Dashboard — Real-time DB Call Metrics, Live Assistant Status & Bilingual Navigation.*
+
+![Dukandar AI Voice Assistant Central Hub](docs/images/voice_assistant_card.png)
+*Figure 2: Voice Assistant Hub — Central WebRTC Mic Controls, Organic Audio Waveform & One-Touch Quick Actions.*
+
+![Dukandar AI Local Store Product Catalogue Grid](docs/images/product_catalogue_grid.png)
+*Figure 3: Interactive Local Store Product Catalogue — Item Images, Category Filter Chips, Live Stock Badges & Unit Pricing.*
+
 ---
 
 ## 2. Problem Statement
