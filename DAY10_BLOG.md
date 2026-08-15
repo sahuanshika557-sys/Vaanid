@@ -1,12 +1,16 @@
 ---
-title: "Building Dukandar AI: A Multilingual Voice AI Agent for Local Commerce 🇮🇳"
+title: "What Happens When Your Local Shopkeeper Gets a Voice Powered by AI? 🛍️"
 published: true
-description: "A complete deep-dive into building Dukandar AI: a low-latency (~55ms TTS), Hinglish-native voice agent using LiveKit, Murf Falcon TTS, Deepgram Nova-3, Gemini 3.5, multi-agent handoffs & SQLite memory."
+description: "India doesn't always shop through search bars. Sometimes it starts with 'Bhaiya, ye available hai?'. Here is how I built Dukandar AI: a ~55ms low-latency, Hinglish-native Voice AI Agent for Local Commerce."
 tags: ai, python, webdev, voiceai
 canonical_url: https://github.com/sahuanshika557-sys/murf-ai
 ---
 
-# Building a Multilingual Local Commerce AI Voice Agent — My 10-Day Voice AI Journey
+# What Happens When Your Local Shopkeeper Gets a Voice Powered by AI? 🛍️
+
+> *India doesn't always shop through search bars, filters, and forms. Sometimes, it starts with a simple conversation — **“Bhaiya, ye available hai?”***  
+
+## Building a Multilingual Local Commerce AI Voice Agent — My 10-Day Voice AI Journey
 
 > 🏆 **Challenge**: 10 Days of Voice Agents — *VoiceForBharat Edition*  
 > 🏬 **Track**: Local Commerce  
