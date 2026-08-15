@@ -57,7 +57,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
       className={cn(
         publicSans.variable,
         commitMono.variable,
-        'scroll-smooth font-sans antialiased'
+        'scroll-smooth font-sans antialiased dark'
       )}
     >
       <head>
@@ -67,13 +67,14 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
       </head>
       <body
-        className="bg-background text-foreground min-h-svh overflow-x-hidden"
+        className="bg-background text-foreground min-h-svh overflow-x-hidden dark"
         suppressHydrationWarning
       >
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
-          enableSystem
+          forcedTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <LanguageProvider>
