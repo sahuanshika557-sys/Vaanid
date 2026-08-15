@@ -12,6 +12,7 @@ import {
 import { DebugPanel } from '@/components/agents-ui/debug-panel';
 import { Shimmer } from '@/components/ai-elements/shimmer';
 import { cn } from '@/lib/shadcn/utils';
+import { getProductImage } from '@/lib/product-images';
 import { TileLayout } from './tile-view';
 
 const MotionMessage = motion.create(Shimmer);
@@ -257,32 +258,45 @@ function AgentStatusHeader({
       <AnimatePresence>
         {!escalationInfo && catalogueInfo && (
           <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            initial={{ opacity: 0, y: -10, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="border-border/60 bg-background/80 pointer-events-auto max-w-sm rounded-xl border px-4 py-2.5 shadow-xl backdrop-blur-md"
+            exit={{ opacity: 0, y: -10, scale: 0.9 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="border-emerald-500/30 bg-slate-950/90 pointer-events-auto max-w-sm overflow-hidden rounded-2xl border p-3 shadow-2xl backdrop-blur-xl"
           >
             {catalogueInfo.status === 'checking' && (
-              <div className="flex items-center gap-2 text-xs font-medium text-amber-400">
-                <span className="size-2 animate-ping rounded-full bg-amber-400" />
-                <span>🔎 Checking catalogue...</span>
+              <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
+                <span className="size-2.5 animate-ping rounded-full bg-amber-400" />
+                <span>🔎 Searching Product Catalogue...</span>
               </div>
             )}
             {catalogueInfo.status === 'found' && (
-              <div className="flex flex-col gap-0.5 text-xs">
-                <div className="flex items-center gap-1.5 font-bold text-emerald-400">
-                  <span>📦 Product Found</span>
+              <div className="flex items-center gap-3">
+                {/* Product Image Thumbnail */}
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-xl border border-emerald-500/20 bg-muted/30">
+                  <img
+                    src={getProductImage(catalogueInfo.title || '')}
+                    alt={catalogueInfo.title || 'Product'}
+                    className="size-full object-cover transition-transform duration-300 hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                 </div>
-                <div className="text-foreground font-semibold">{catalogueInfo.title}</div>
-                {catalogueInfo.priceInfo && (
-                  <div className="text-muted-foreground">{catalogueInfo.priceInfo}</div>
-                )}
-                {catalogueInfo.stockInfo && (
-                  <div className="text-xs font-medium text-emerald-500">
-                    {catalogueInfo.stockInfo}
+
+                <div className="flex flex-col gap-0.5 text-xs">
+                  <div className="flex items-center gap-1.5 font-extrabold text-emerald-400 text-[11px]">
+                    <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>PRODUCT FOUND</span>
                   </div>
-                )}
+                  <div className="text-white font-bold text-sm leading-tight">{catalogueInfo.title}</div>
+                  {catalogueInfo.priceInfo && (
+                    <div className="text-emerald-300 font-semibold text-xs">{catalogueInfo.priceInfo}</div>
+                  )}
+                  {catalogueInfo.stockInfo && (
+                    <div className="text-[11px] font-medium text-emerald-400/90">
+                      {catalogueInfo.stockInfo}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             {catalogueInfo.status === 'error' && (

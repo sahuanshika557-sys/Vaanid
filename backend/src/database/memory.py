@@ -75,17 +75,27 @@ def init_db(db_path: str | None = None) -> str:
                 cursor.execute("ALTER TABLE calls ADD COLUMN handoff_target TEXT")
             conn.commit()
 
-            # Seed sample orders if not present
+            # Seed sample customers & orders if not present
             now_str = datetime.now(timezone.utc).isoformat()
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO customers (user_id, name, language_preference, preferred_delivery_slot, usual_quantity, past_orders, last_interaction, created_at, updated_at)
+                VALUES
+                ('cust_radhika', 'Radhika Sharma', 'Hindi', 'Morning 10 AM', '5 kg', 'ORD_RADHIKA_101: 2 packs of Basmati Rice (5kg) for ₹640 (Confirmed)', ?, ?, ?),
+                ('cust_default', 'Radhika Sharma', 'Hindi', 'Morning 10 AM', '5 kg', 'ORD_RADHIKA_101: 2 packs of Basmati Rice (5kg) for ₹640 (Confirmed)', ?, ?, ?)
+                """,
+                (now_str, now_str, now_str, now_str, now_str, now_str),
+            )
             cursor.execute(
                 """
                 INSERT OR IGNORE INTO orders (order_id, user_id, customer_name, phone_or_sip, product_name, quantity, estimated_total, status, created_at, updated_at)
                 VALUES
-                ('12345', 'cust_default', 'Payal', 'browser', 'Basmati Rice (5kg)', 1.0, 320.0, 'CONFIRMED', ?, ?),
-                ('98765', 'cust_default', 'Payal', 'browser', 'Sunflower Oil (1L)', 2.0, 310.0, 'CONFIRMED', ?, ?),
-                ('55555', 'cust_default', 'Payal', 'browser', 'Wheat Flour (10kg)', 1.0, 450.0, 'CONFIRMED', ?, ?)
+                ('ORD_RADHIKA_101', 'cust_radhika', 'Radhika Sharma', 'browser', 'Basmati Rice (5kg)', 2.0, 640.0, 'CONFIRMED', ?, ?),
+                ('ORD_RADHIKA_101', 'cust_default', 'Radhika Sharma', 'browser', 'Basmati Rice (5kg)', 2.0, 640.0, 'CONFIRMED', ?, ?),
+                ('12345', 'cust_radhika', 'Radhika Sharma', 'browser', 'Basmati Rice (5kg)', 1.0, 320.0, 'CONFIRMED', ?, ?),
+                ('98765', 'cust_radhika', 'Radhika Sharma', 'browser', 'Sunflower Oil (1L)', 2.0, 310.0, 'CONFIRMED', ?, ?)
                 """,
-                (now_str, now_str, now_str, now_str, now_str, now_str),
+                (now_str, now_str, now_str, now_str, now_str, now_str, now_str, now_str),
             )
             conn.commit()
 
@@ -389,7 +399,7 @@ def update_order_status(
 def seed_test_order(
     linphone_username: str | None = None, db_path: str | None = None
 ) -> dict[str, Any]:
-    """Seed verified Part 23 test order for Ramesh into database."""
+    """Seed verified Part 23 test order for Radhika Sharma into database."""
     init_db(db_path)
     username = linphone_username or os.getenv("LINPHONE_USERNAME", "test_user")
     sip_address = (
@@ -398,19 +408,19 @@ def seed_test_order(
         else username
     )
 
-    # First ensure Ramesh exists in customer memory
+    # First ensure Radhika Sharma exists in customer memory
     update_customer(
-        user_id="cust_ramesh",
-        name="Ramesh",
+        user_id="cust_radhika",
+        name="Radhika Sharma",
         language_preference="Hindi",
         db_path=db_path,
     )
 
     # Seed verified test order: Basmati Rice x 2 = ₹640 (Status: PENDING)
     return create_order(
-        order_id="ORD_RAMESH_101",
-        user_id="cust_ramesh",
-        customer_name="Ramesh",
+        order_id="ORD_RADHIKA_101",
+        user_id="cust_radhika",
+        customer_name="Radhika Sharma",
         phone_or_sip=sip_address,
         product_name="Basmati Rice",
         quantity=2.0,

@@ -18,9 +18,9 @@ interface OutboundCardProps {
 
 export function OutboundCard({ className }: OutboundCardProps) {
   const [callState, setCallState] = useState<OutboundCallState>('READY');
-  const [destination, setDestination] = useState<string>('ramesh');
+  const [destination, setDestination] = useState<string>('radhika');
   const simulatedOrder = {
-    id: 'ORD_RAMESH_101',
+    id: 'ORD_RADHIKA_101',
     product: 'Basmati Rice (2x)',
     status: 'PENDING',
     total: '₹640.00',
@@ -150,7 +150,7 @@ export function OutboundCard({ className }: OutboundCardProps) {
           </div>
           <div className="text-muted-foreground grid grid-cols-2 gap-2 pt-1">
             <div>
-              Customer: <strong className="text-foreground font-semibold">Ramesh</strong>
+              Customer: <strong className="text-foreground font-semibold">Radhika Sharma</strong>
             </div>
             <div>
               Status: <strong className="font-bold text-amber-500">{simulatedOrder.status}</strong>

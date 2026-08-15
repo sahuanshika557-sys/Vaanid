@@ -111,8 +111,8 @@ async def dial_outbound(target_user: str | None = None) -> bool:
         print("==================================================================\n")
         log_call_outcome(
             call_id=f"call_{uuid.uuid4().hex[:8]}",
-            order_id="ORD_RAMESH_101",
-            user_id="cust_ramesh",
+            order_id="ORD_RADHIKA_101",
+            user_id="cust_radhika",
             destination=sip_address,
             outcome="USER_OPTED_OUT",
         )
@@ -145,8 +145,8 @@ async def dial_outbound(target_user: str | None = None) -> bool:
 
     log_call_outcome(
         call_id=call_id,
-        order_id="ORD_RAMESH_101",
-        user_id="cust_ramesh",
+        order_id="ORD_RADHIKA_101",
+        user_id="cust_radhika",
         destination=sip_address,
         outcome="DIALING",
     )
@@ -185,8 +185,8 @@ async def dial_outbound(target_user: str | None = None) -> bool:
                 sip_trunk_id=sip_trunk_id,
                 sip_call_to=clean_username,
                 room_name=room_name,
-                participant_identity=raw_target or "cust_ramesh",
-                participant_name="Ramesh",
+                participant_identity=raw_target or "cust_radhika",
+                participant_name="Radhika Sharma",
             )
             response = await api.sip.create_sip_participant(sip_req)
 
@@ -213,8 +213,8 @@ async def dial_outbound(target_user: str | None = None) -> bool:
         )
         log_call_outcome(
             call_id=call_id,
-            order_id="ORD_RAMESH_101",
-            user_id="cust_ramesh",
+            order_id="ORD_RADHIKA_101",
+            user_id="cust_radhika",
             destination=sip_address,
             outcome=outcome_status,
         )

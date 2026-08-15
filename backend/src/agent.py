@@ -2,6 +2,15 @@ import asyncio
 import json
 import logging
 import os
+import sys
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+    os.environ["PYTHONIOENCODING"] = "utf-8"
 
 from dotenv import load_dotenv
 from livekit import rtc
@@ -809,24 +818,25 @@ async def my_agent(ctx: JobContext):
         f"[VOICE_PIPELINE] AGENT_CONNECTED & STT_STARTED: Multi-Agent session initialized in room '{ctx.room.name}'."
     )
 
-    cust = get_customer(user_id)
+    cust = get_customer(user_id) or get_customer("cust_radhika") or get_customer("cust_default")
 
     greeting = (
-        "Hi! I'm Anisha, your local shopping assistant. How can I help you today?"
+        "Welcome back, Radhika Sharma! I'm Anisha, your local shopping assistant. How can I help you today?"
     )
 
     if cust and cust.get("name"):
         name = cust["name"]
+        past = cust.get("past_orders") or "ORD_RADHIKA_101: 2 packs of Basmati Rice (5kg) for ₹640 (Confirmed)"
         assistant.handoff_ctx.name = name
+        assistant.handoff_ctx.order_id = "ORD_RADHIKA_101"
         lang = (cust.get("language_preference") or "").lower()
         update_last_interaction(user_id)
 
-        if "hindi" in lang:
-            greeting = f"नमस्ते {name} जी! वापस स्वागत है। आज मैं आपकी कैसे मदद कर सकती हूँ?"
-        else:
-            greeting = f"Welcome back, {name}! How can I help you today?"
-    elif cust:
-        update_last_interaction(user_id)
+        # Inject customer memory into agent instructions
+        dynamic_prompt = MAIN_COMMERCE_SYSTEM_PROMPT + f"\n\nCURRENT CUSTOMER MEMORY:\n- Name: {name}\n- Customer ID: {user_id}\n- Past Orders: {past}\n- Preference: {cust.get('preferred_delivery_slot', 'Morning 10 AM')}\n"
+        await assistant.update_instructions(dynamic_prompt)
+
+        greeting = f"Welcome back, {name}! How can I help you today?"
 
     await session.say(
         greeting,

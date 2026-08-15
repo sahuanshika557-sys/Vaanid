@@ -1,65 +1,219 @@
-# Murf AI & LiveKit Voice Agent Starter
+# Local Commerce AI Voice Agent
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Murf Falcon](https://img.shields.io/badge/TTS-Murf%20Falcon-6366F1)](https://murf.ai/api/docs/text-to-speech/streaming)
 [![LiveKit](https://img.shields.io/badge/Transport-LiveKit-002cf2)](https://docs.livekit.io)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![CI](https://github.com/murf-ai/murf-livekit-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/murf-ai/murf-livekit-starter/actions)
+[![Deepgram](https://img.shields.io/badge/STT-Deepgram%20Nova--3-13EF95)](https://deepgram.com)
 
-A production-ready voice AI agent starter powered by **Murf Falcon TTS** (ultra-fast text-to-speech) and **LiveKit Agents** framework.
+A portfolio-quality, production-ready **Multilingual Local Commerce AI Voice Assistant** (Dukandar AI) built for the **"10 Days of Voice Agents — VoiceForBharat Edition"** challenge.
 
-This project includes a Python backend voice pipeline (STT → LLM → TTS) and a modern, fully responsive Next.js frontend web UI with real-time audio visualization, theme toggling, and transcript display.
-
----
-
-## 🌟 Key Features
-
-- **Ultra-Low Latency Voice AI**: ~55ms TTS streaming latency powered by Murf Falcon.
-- **Full Responsiveness**: Mobile, tablet, and desktop layout with fluid typography and dark/light mode support.
-- **Production Ready**: Zero broken imports, full linting compliance, automated CI workflows, and single-command local setup.
-- **Modular Backend**: Extensible assistant class with support for `@function_tool` decorators (weather, database, API calls).
-- **Accessibility & Performance**: Built with semantic HTML, focus indicators, WCAG AA contrast, and optimized assets.
+Powered by **Murf Falcon TTS** (~55ms streaming voice synthesis), **LiveKit Agents** (real-time WebRTC audio transport), **Deepgram Nova-3** (multilingual STT), **Google Gemini LLM**, **SQLite** (persistent memory, call analytics & escalations), and a **Next.js 15** responsive frontend.
 
 ---
 
-## 🏗️ Architecture
+## 1. Project Overview
+
+The **Local Commerce AI Voice Agent** is a voice-first conversational AI built specifically for local shops and small businesses in India. It enables customers to converse naturally in **English, Hindi (Devanagari), or Hinglish (Roman Hindi)** without needing to type or navigate complex app menus.
+
+### Core Capabilities:
+- **Product Discovery & Catalogue Lookup**: Check availability, stock quantities, seller details, and unit pricing across local store inventory.
+- **Order Total Estimation**: Calculate subtotals for multiple items with stock availability validation before purchase.
+- **Order Status Verification**: Check real-time statuses (`PENDING`, `CONFIRMED`, `CANCELLED`) for past customer orders.
+- **Returns & Refunds Specialist Handoff**: Automatically route return/refund requests to a specialized agent with context preservation.
+- **Human Support Escalation**: Generate structured escalation tickets with unique reference IDs (`LC-2026-XXXX`) upon explicit customer consent for unresolved disputes.
+- **Outbound Voice Telephony**: Make automated SIP telephone calls for order status updates with opt-out compliance.
+- **Real-Time Call Analytics**: Monitor call volume, success rates, duration trends, and failure reasons on an interactive dashboard.
+
+---
+
+## 2. Problem Statement
+
+Local commerce customers in India face significant friction when trying to place orders or resolve shopping queries:
+- **Language & Literacy Barriers**: Traditional e-commerce apps require typing in formal English, excluding millions of local shoppers who speak Hindi, Hinglish, or regional dialects.
+- **Inventory Uncertainty**: Customers waste time calling local shopkeepers just to confirm if items (e.g. 5kg Basmati Rice or MP Chakki Atta) are in stock.
+- **Post-Purchase Anxiety**: Customers struggle to check return windows, refund statuses, or escalate financial disputes when order issues arise.
+
+**Why Voice AI Matters**: Voice provides a frictionless interface that requires zero learning curve. By offering code-mixed Hindi/Hinglish speech understanding, instant catalogue lookup tools, transparent human escalation, and specialist agent routing, local commerce becomes accessible to everyone.
+
+---
+
+## 3. Key Features
+
+- 🎙️ **Real-Time Voice Conversation**: Ultra-low latency (~55ms TTS streaming) powered by Murf Falcon and LiveKit WebRTC.
+- 🗣️ **Multilingual Code-Switching**: Seamless support for English, Devanagari Hindi, and Roman Hinglish with dynamic language mirroring.
+- 🧠 **Persistent Customer Memory**: SQLite-backed customer profiles (`local_commerce_memory.db`) with explicit consent management for remembering user names and preferences.
+- 🛠️ **Real Data Catalogue Tools**: Real-time product search (`lookup_product`) and price calculation (`calculate_order_total`) connected to local inventory datasets (`data/products.csv`).
+- 📞 **Outbound SIP Telephony**: Automated outbound calling via LiveKit SIP trunking and Linphone for order notifications with opt-out safety.
+- 👨‍💼 **Human Support Escalation**: Consent-gated ticket creation generating unique reference codes (`LC-2026-XXXX`) stored in SQLite.
+- 📊 **Call Performance Analytics**: Full observability dashboard (`/analytics`) tracking call lifecycles, success rates, channel breakdowns, and failure reasons.
+- 🤖 **Specialist Agent Handoff**: Multi-agent architecture automatically transferring return/refund requests from Main Commerce Agent to Returns & Refunds Specialist.
+- 🛡️ **Safety Guardrails**: Hard rules refusing unauthorized direct order placements, false refund confirmations, or system prompt leakage.
+- 📱 **Responsive Frontend**: Modern Next.js UI (`/`) with 5 visual agent states (`READY`, `CONNECTING`, `LISTENING`, `SPEAKING`, `ENDED`), mic permission guidance, and live transcripts.
+
+---
+
+## 4. Architecture
 
 ```mermaid
-flowchart LR
-    A["🎙️ User Audio Input"] -->|"LiveKit Transport"| B["Deepgram STT (Nova-3)"]
-    B -->|"Transcribed Text"| C["Google Gemini LLM"]
-    C -->|"Response Stream"| D["Murf Falcon TTS"]
-    D -->|"Streaming Audio"| E["LiveKit Transport"]
-    E -->|"Audio Output"| F["🔊 User Hears Agent"]
+flowchart TD
+    subgraph Client ["Client & Telephony Layer"]
+        UI["🌐 Next.js Web Frontend\n(http://localhost:3000)"]
+        SIP["📱 Linphone / Phone\n(SIP Outbound Call)"]
+        DASH["📊 Analytics & Support Portal\n(/analytics & /support)"]
+    end
 
-    style A fill:#1e293b,stroke:#64748b,color:#fff
-    style B fill:#0284c7,stroke:#38bdf8,color:#fff
-    style C fill:#6366f1,stroke:#818cf8,color:#fff
-    style D fill:#059669,stroke:#34d399,color:#fff
-    style E fill:#ea580c,stroke:#fb923c,color:#fff
-    style F fill:#1e293b,stroke:#64748b,color:#fff
+    subgraph Transport ["Real-Time Transport Layer"]
+        LK["⚡ LiveKit WebRTC & SIP Gateway"]
+    end
+
+    subgraph Pipeline ["Speech & Intelligence Pipeline"]
+        STT["🎤 Deepgram STT (Nova-3 Multilingual)"]
+        LLM["🧠 Google Gemini LLM (3.5 Flash Lite)"]
+        TTS["🔊 Murf Falcon TTS (Anisha Voice)"]
+        VAD["🎛️ Silero VAD & Turn Detector"]
+    end
+
+    subgraph Agents ["Multi-Agent System Core (agent.py)"]
+        MAIN["🤖 Main Commerce Agent\n(Anisha - Catalogue & Store Info)"]
+        SPEC["🤖 Returns & Refunds Specialist\n(Specialist Agent)"]
+    end
+
+    subgraph Data ["Tools & SQLite Database"]
+        MEM["🧠 Memory Engine (customers table)"]
+        CAT["🛒 Catalogue Tool (lookup_product)"]
+        CALC["🧮 Order Calculator (calculate_order_total)"]
+        RET["📦 Specialist Tools (check_refund_status)"]
+        ESC["👨💼 Escalation Tool (create_escalation)"]
+        DB[("💾 SQLite Database\nbackend/local_commerce_memory.db")]
+    end
+
+    UI <-->|"WebRTC Audio & Data Channel"| LK
+    SIP <-->|"SIP / TLS RTP Audio"| LK
+    LK <--> STT
+    LK <--> TTS
+    STT --> MAIN
+    STT --> SPEC
+    MAIN --> LLM
+    SPEC --> LLM
+    LLM --> TTS
+    TTS --> LK
+
+    MAIN <-->|"Context-Preserving Handoff"| SPEC
+    MAIN <--> MEM
+    MAIN <--> CAT
+    MAIN <--> CALC
+    MAIN <--> ESC
+    SPEC <--> RET
+    SPEC <--> ESC
+
+    MEM <--> DB
+    CAT <--> DB
+    CALC <--> DB
+    RET <--> DB
+    ESC <--> DB
+    DASH <-->|"Next.js API & db_api.py"| DB
 ```
 
 ---
 
-## 🚀 Quickstart & One-Command Run
+## 5. Technology Stack
 
-### Prerequisites
+- **Speech-to-Text**: [Deepgram Nova-3](https://deepgram.com) (`language="multi"`)
+- **Text-to-Speech**: [Murf Falcon](https://murf.ai) (`voice="Anisha"`, `locale="en-IN"`, streaming TTS)
+- **LLM Engine**: [Google Gemini LLM](https://aistudio.google.com) (`gemini-3.5-flash-lite`)
+- **Voice Agent Framework**: [LiveKit Agents SDK](https://docs.livekit.io/agents) (`livekit-agents ~1.4`)
+- **Transport / Telephony**: LiveKit Cloud / Server WebRTC & LiveKit SIP Trunking
+- **Database & Persistence**: SQLite (`backend/local_commerce_memory.db`) & Python `sqlite3`
+- **Frontend Framework**: [Next.js 15](https://nextjs.org) (React 19, TypeScript)
+- **UI & Styling**: Tailwind CSS, Shadcn UI (`components/ui`), Lucide Icons
+- **Backend Package Manager**: [uv](https://docs.astral.sh/uv/) (Python 3.10+)
+- **Frontend Package Manager**: [pnpm](https://pnpm.io/)
 
-- **Python**: 3.10 to 3.14
-- **[uv](https://docs.astral.sh/uv/)**: High-performance Python package installer
-- **Node.js**: 18+
-- **pnpm**: Fast, disk space efficient package manager (`npm install -g pnpm`)
+---
 
-### 1. Clone & Set Up Environment
+## 6. Project Structure
 
-```bash
-git clone https://github.com/murf-ai/murf-livekit-starter.git
-cd murf-livekit-starter
+```
+murf-livekit-starter/
+├── backend/
+│   ├── src/
+│   │   ├── agent.py                      # Core entrypoint, Main & Specialist agents
+│   │   ├── database/
+│   │   │   ├── schema.py                  # DDL schemas for 6 SQLite tables
+│   │   │   ├── memory.py                  # SQLite CRUD, analytics & escalation logic
+│   │   │   └── db_api.py                  # CLI bridge connecting Next.js to SQLite
+│   │   ├── services/
+│   │   │   └── handoff_service.py         # Multi-agent handoff context manager
+│   │   ├── telephony/outbound/
+│   │   │   ├── agent.py                  # Outbound telephony agent worker
+│   │   │   └── dial.py                   # SIP dispatcher script
+│   │   └── tools/
+│   │       ├── catalogue_tool.py          # Product search & inventory lookup
+│   │       ├── order_tool.py              # Order subtotal & stock calculation
+│   │       ├── returns_refunds_tools.py   # Return eligibility & refund status
+│   │       └── escalation_tool.py         # Human support escalation ticket tool
+│   ├── tests/                             # Pytest suite & LLM judge evaluations
+│   ├── pyproject.toml                    # Python project & dependency configuration
+│   └── .env.example                       # Backend environment template
+├── data/
+│   └── products.csv                      # Local product inventory dataset (20 items)
+├── frontend/
+│   ├── app/
+│   │   ├── page.tsx                      # Primary responsive voice assistant UI
+│   │   ├── analytics/page.tsx            # Day 8 call analytics performance dashboard
+│   │   ├── support/page.tsx              # Day 7 human support ticket management portal
+│   │   └── api/                          # Token generation & SQLite API routes
+│   ├── app-config.ts                     # Branding, visualizer, & theme config
+│   ├── package.json                      # Node.js dependencies
+│   └── .env.example                       # Frontend environment template
+├── docs/
+│   └── architecture.md                   # Detailed technical architecture guide
+├── DAY10_AUDIT.md                        # Phase 1 project audit report
+├── DAY10_BLOG.md                         # Complete 10-day Voice AI technical article
+├── DAY10_EVIDENCE.md                     # Feature verification matrix & checklist
+├── DAY10_LINKEDIN_POST.md                # LinkedIn announcement post
+├── README.md                             # Repository homepage documentation
+├── start_app.ps1                         # PowerShell single-command runner (Windows)
+└── start_app.sh                          # Bash single-command runner (macOS/Linux)
 ```
 
-Copy the example environment files for backend and frontend:
+---
+
+## 7. Installation
+
+### Prerequisites:
+- **Python**: 3.10 to 3.14
+- **uv**: High-performance Python package manager (`pip install uv` or `winget install astral-sh.uv`)
+- **Node.js**: 18+
+- **pnpm**: `npm install -g pnpm`
+
+### Step 1: Clone Repository
+```bash
+git clone https://github.com/sahuanshika557-sys/murf-ai.git
+cd murf-ai
+```
+
+### Step 2: Install Backend Dependencies
+```bash
+cd backend
+uv sync
+cd ..
+```
+
+### Step 3: Install Frontend Dependencies
+```bash
+cd frontend
+pnpm install
+cd ..
+```
+
+---
+
+## 8. Environment Setup
+
+Create `.env.local` files for both backend and frontend from templates:
 
 ```bash
 # Backend environment setup
@@ -69,405 +223,132 @@ cp backend/.env.example backend/.env.local
 cp frontend/.env.example frontend/.env.local
 ```
 
-Fill in your API keys in `backend/.env.local`:
-
-| Environment Variable | Description | Source |
-| -------------------- | ----------- | ------ |
-| `LIVEKIT_URL` | LiveKit Cloud / Local Server URL | [LiveKit Cloud](https://cloud.livekit.io) |
-| `LIVEKIT_API_KEY` | LiveKit API Key | [LiveKit Cloud](https://cloud.livekit.io) |
-| `LIVEKIT_API_SECRET` | LiveKit API Secret | [LiveKit Cloud](https://cloud.livekit.io) |
-| `MURF_API_KEY` | Murf API Key | [Murf AI Dashboard](https://murf.ai/api/dashboard) |
-| `DEEPGRAM_API_KEY` | Deepgram STT API Key | [Deepgram Console](https://console.deepgram.com) |
-| `GOOGLE_API_KEY` | Google Gemini LLM Key | [Google AI Studio](https://aistudio.google.com) |
-
-Fill in your LiveKit connection details in `frontend/.env.local`:
-
+Fill in your required API keys in `backend/.env.local`:
 ```env
-LIVEKIT_URL=wss://your-livekit-project.livekit.cloud
-LIVEKIT_API_KEY=your-livekit-api-key
-LIVEKIT_API_SECRET=your-livekit-api-secret
+LIVEKIT_URL=wss://your-project.livekit.cloud
+LIVEKIT_API_KEY=your_livekit_api_key
+LIVEKIT_API_SECRET=your_livekit_api_secret
+MURF_API_KEY=your_murf_api_key
+DEEPGRAM_API_KEY=your_deepgram_api_key
+GOOGLE_API_KEY=your_google_gemini_api_key
+AGENT_NAME=my-agent
 ```
 
-### 2. Run with a Single Command
+Fill in your LiveKit connection details in `frontend/.env.local`:
+```env
+LIVEKIT_URL=wss://your-project.livekit.cloud
+LIVEKIT_API_KEY=your_livekit_api_key
+LIVEKIT_API_SECRET=your_livekit_api_secret
+AGENT_NAME=my-agent
+```
 
-#### Windows (PowerShell):
+> [!CAUTION]
+> Never commit `.env` or `.env.local` files to public repositories. Secrets are strictly ignored by `.gitignore`.
+
+---
+
+## 9. Running the Project
+
+### Windows (PowerShell Single-Command Launcher):
 ```powershell
 .\start_app.ps1
 ```
 
-#### macOS / Linux (Bash):
+### macOS / Linux (Bash Single-Command Launcher):
 ```bash
 chmod +x start_app.sh
 ./start_app.sh
 ```
 
-#### Using root `package.json`:
-```bash
-pnpm setup  # Install backend & frontend dependencies
-pnpm dev    # Run services
-```
+### Running Components Individually:
 
-The app will start:
-- Frontend UI: `http://localhost:3000`
-- Backend Agent: Listening for LiveKit WebRTC connections
-
----
-
-## 🧪 Testing & Code Quality
-
-Run tests and linter checks directly from the root workspace:
-
-```bash
-# Run backend pytest suite
-pnpm test
-
-# Run code linter checks
-pnpm lint
-
-# Format codebase
-pnpm format
-
-# Build production frontend bundle
-pnpm build
-```
-
-## 🧠 Day 4 — Persistent Customer Memory
-
-The voice agent is powered by **REAL Persistent Customer Memory** using SQLite (`local_commerce_memory.db`), enabling memory to survive call terminations, agent restarts, backend restarts, and browser reloads:
-
-- **SQLite Database Layer**: `customers` table storing `user_id` (PRIMARY KEY), `name`, `language_preference`, `preferred_delivery_slot`, `usual_quantity`, `past_orders`, `last_interaction`, `created_at`, and `updated_at`. Uses parameterized SQL queries exclusively.
-- **Stable Customer Identity**: Frontend generates and persists a stable client-side customer ID (`local_commerce_customer_id`) in browser `localStorage`. Passed as `participantIdentity` to LiveKit so the same caller is recognized across all calls.
-- **3 Agent Tools (`@function_tool`)**:
-  1. `lookup_caller`: Retrieves saved customer memory (`name`, `language_preference`, `preferred_delivery_slot`, `usual_quantity`, `past_orders`, `last_interaction`).
-  2. `save_caller_memory`: Saves caller memory AFTER explicit user consent (`"Would you like me to remember that...?"` → `"Yes"`).
-  3. `forget_caller`: Deletes caller memory when requested (`"Forget everything about me"`).
-- **Mandatory Consent Workflow**: The agent ALWAYS asks for permission before saving any personal fact or preference. Supports English (*"Yes, remember it"*), Hindi (*"हाँ, याद रखना"*), and Hinglish (*"Haan, yaad rakhna"*).
-- **Personalized Returning Customer Experience**:
-  - **New Customer**: *"Hi! I'm Anisha, your local shopping assistant. How can I help you today?"*
-  - **Returning Customer**: *"नमस्ते Ramesh जी! वापस स्वागत है। आज मैं आपकी कैसे मदद कर सकती हूँ?"*
-- **Privacy & Safety**: Never stores passwords, OTPs, credit cards, or payment credentials. Memory never overrides Day 2 guardrails (never falsely confirms orders or refunds).
-- **Automated Tests**: Unit tests in `backend/tests/test_memory.py` covering table creation, customer CRUD, timestamp updates, consent scenarios, and persistence across connections (`uv run pytest tests/test_memory.py`).
-
----
-
-## 🌐 Multilingual Voice Support (Hindi + Hinglish + English)
-
-The agent detects and responds according to the user's current language/register and can switch languages during the same call without restarting or manual toggles.
-
-### Key Capabilities
-- **Supported Languages & Registers**:
-  - **English**: *"How much is basmati rice?"* → *"Basmati Rice 5 kg pack is listed at ₹320 with 25 units available."*
-  - **Hinglish / Roman Hindi**: *"Basmati rice kitne ka hai?"* → *"Basmati rice ka listed price ₹320 hai."*
-  - **Hindi (Devanagari)**: *"बासमती चावल कितने के हैं?"* → *"बासमती चावल की सूचीबद्ध कीमत ₹320 है।"*
-  - **Mixed Code-Switching**: *"Can you check kar sakte ho basmati rice price?"* → Mirrors mixed register naturally.
-- **Speech Recognition (STT)**: Configured with **Deepgram Nova-3** (`language="multi"`, `detect_language=True`) for multi-language speech recognition.
-- **Text-to-Speech (TTS)**: Powered by **Murf Falcon** (`Anisha`, `en-IN` / `hi-IN` capabilities) for natural voice synthesis across English, Hindi, and Hinglish.
-- **Language Mirroring**: Automatically matches the user's latest utterance language, script, and formality. Current utterance always overrides stored customer memory language preferences.
-- **Tool & Guardrail Integration**: Function tools (`lookup_product`, `calculate_order_total`) and refusal guardrails operate language-independently across English, Hindi, and Hinglish.
-- **Unclear Speech Fallback**: Gracefully asks for clarification in the user's active language (*"Sorry, mujhe clear nahi suna. Ek baar phir bata sakte ho?"*).
-
----
-
-## 🛍️ Day 3 — Personalized Local Commerce AI Voice Agent Frontend
-
-The frontend has been completely upgraded and personalized for the **LOCAL COMMERCE** track (**Dukandar AI — Local Commerce Voice Assistant**), providing a voice-first local shopping assistant experience:
-
-- **Product Concept**: A smart AI voice assistant helping local customers interact with local shops and businesses (product questions, shop details, hours, local services, and support).
-- **Five Agent States**:
-  1. **READY**: Prominent hero section, interactive central AI assistant card with breathing avatar pulse, language badge (`English • Hindi • Hinglish`), capability cards, and a primary **Start Voice Assistant** button.
-  2. **CONNECTING**: Rotating loading indicator with status *"Connecting..."* and disabled action button to prevent duplicate connections.
-  3. **LISTENING**: Top status badge displaying `🎤 Listening to you` with dynamic microphone pulse and organic voice visualizer bars.
-  4. **SPEAKING**: Top status badge displaying `🔊 Your assistant is speaking` with dynamic animated waveform.
-  5. **CALL ENDED**: Clean post-call screen displaying *"Conversation ended"* and a **Start Again** action button that resets session state without a browser refresh.
-- **Microphone Error Handling**: Friendly error card for `NotAllowedError` / `NotFoundError` displaying step-by-step browser permission instructions (*"Please allow microphone access in your browser settings and try again."*) with a **Try Again** button.
-- **Local Commerce Visual Sections**:
-  - 🛍️ **Product Questions**: Ask about local shop products, services, and availability.
-  - 🏪 **Shop Information**: Inquire about business address, operating hours, and contact info.
-  - 📦 **Order Assistance**: Guidance on orders when store data is available.
-  - 💬 **Customer Support**: Seamless escalation to human support when needed.
-- **Trust & Guardrails**: Highlights Day 2 guardrails (verifiable store data, zero false order/refund confirmations, transparent escalation).
-- **Multi-lingual Voice**: Seamless English, Hindi, and Hinglish support matching Day 2 capabilities.
-- **Responsive & Accessible**: Fully responsive layout across Desktop (1440px), Laptop (1280px), Tablet (768px), and Mobile (390px) with semantic HTML, focus states, and `prefers-reduced-motion` support.
-
----
-
-## 🛒 Day 5 — Real-Time Tools for Local Commerce Voice Agent
-
-Day 5 connects the Local Commerce Voice Assistant (**Dukandar AI**) to **REAL DOMAIN DATA** through real-time function tools (`lookup_product` and `calculate_order_total`).
-
-### 1. Data Source Disclosure
-> [!IMPORTANT]
-> **DATA SOURCE**: Product catalogue data is **local/static test data** stored in `data/products.csv` and `backend/data/products.csv`. The assistant clearly communicates this local data context and never claims to fetch live unverified market data.
-
-### 2. Dataset Schema (`data/products.csv`)
-The catalogue contains 20 realistic items across 8 categories (Groceries, Fruits, Vegetables, Household, Personal Care, Snacks, Beverages, Bakery) with prices in Indian Rupees (INR), stock levels, seller names, locations (Kanpur), and freshness timestamps:
-```csv
-product_id,product_name,category,description,price,currency,stock_quantity,unit,seller_name,location,last_updated
-P001,Basmati Rice,Groceries,Premium long-grain basmati rice,320,INR,25,5 kg,Local Fresh Mart,Kanpur,2026-08-10T10:00:00+05:30
-P004,Aashirvaad Whole Wheat Atta,Groceries,100% pure MP chakki atta,240,INR,3,5 kg,Local Fresh Mart,Kanpur,2026-08-10T10:00:00+05:30
-P005,Toor Dal,Groceries,Unpolished premium toor dal,140,INR,0,1 kg,Local Fresh Mart,Kanpur,2026-08-10T10:00:00+05:30
-```
-
-### 3. Built Agent Tools
-
-#### Tool 1: `lookup_product`
-- **Purpose**: Search catalogue for availability, prices, stock levels, unit sizes, and seller information.
-- **When to Call**: When user asks about product availability, item prices, stock counts, or available products (e.g. *"Do you have basmati rice?"*, *"How much is 5kg rice?"*, *"Which snacks are available?"*).
-- **When NOT to Call**: General greetings, chit-chat, personal preferences, or non-catalogue questions.
-- **Stock Classification**:
-  - `stock_quantity > 5` → **In stock** (e.g. 25 units)
-  - `1 <= stock_quantity <= 5` → **Low stock** (e.g. 3 units)
-  - `stock_quantity == 0` → **Out of stock**
-
-#### Tool 2: `calculate_order_total`
-- **Purpose**: Compute subtotal and total cost for requested items and quantities based on catalogue pricing.
-- **When to Call**: When user asks for total cost calculations (e.g. *"I want 2 packs of Basmati Rice"*, *"How much for 3 liters of sunflower oil?"*).
-- **When NOT to Call**: Placing orders, confirming purchases, processing payments, or reserving inventory.
-- **Stock Validation**: Rejects total calculation if requested quantity exceeds available stock (returns `INSUFFICIENT_STOCK`).
-
-### 4. Zero-Hallucination & Failure Handling
-- **Zero-Hallucination Rule**: The agent NEVER guesses prices, stock, or sellers. If asked a product question, it MUST call `lookup_product` or `calculate_order_total`.
-- **Simulated Catalogue Failure**: Setting `SIMULATE_CATALOGUE_FAILURE=true` in environment variables forces tools to fail safely:
-  - Spoken response: *"Sorry, I couldn't access the product catalogue right now. I don't want to guess the price. Please try again in a moment."*
-
-### 5. Day 4 Memory + Day 5 Tool Chaining
-If a returning customer asks *"I want my usual quantity of rice"*, the agent:
-1. Calls `lookup_caller()` to retrieve saved `usual_quantity` (e.g., 5 kg).
-2. Calls `lookup_product()` to get current price for Basmati Rice.
-3. Calls `calculate_order_total()` to state estimated total.
-
-### 6. Multi-Lingual & Hinglish Behavior
-Works seamlessly across English, Hindi, and Hinglish:
-- **English**: *"How much is basmati rice?"* → *"Basmati Rice 5 kg pack is listed at ₹320 with 25 units available."*
-- **Hinglish**: *"Basmati rice kitne ka hai?"* → *"Basmati rice ka listed price ₹320 hai, 5 kg pack ke liye."*
-- **Hindi**: *"बासमती चावल कितने के हैं?"* → *"बासमती चावल की सूचीबद्ध कीमत ₹320 है, 5 किलो पैक के लिए।"*
-
-### 7. Frontend Real-Time Tool Indicator
-The Next.js UI listens to LiveKit room data events (`catalogue_status`) and displays real-time status cards:
-- 🔎 **Checking catalogue...** (while tool executes)
-- 📦 **Product Found**: Basmati Rice — ₹320 / 5 kg (In stock)
-- ⚠️ **Catalogue temporarily unavailable** (on failure simulation)
-
-### 8. Testing & Execution
-- **Run Unit Tests**:
-  ```bash
-  cd backend
-  uv run pytest tests/test_catalogue.py tests/test_order_calculator.py tests/test_memory.py
-  ```
-- **Simulate Catalogue Failure**:
-  ```bash
-  SIMULATE_CATALOGUE_FAILURE=true uv run python src/agent.py dev
-  ```
-- **Run Full App**:
-  ```powershell
-  .\start_app.ps1   # Windows
-  # or ./start_app.sh # Linux/macOS
-  ```
-
----
-
-## 🎯 Day 2 — Persona, Objectives & Guardrails
-
-The voice agent is configured with Day 2 identity, objectives, boundaries, and safety guardrails:
-
-- **Agent Identity**: Professional AI Customer Support Representative representing Murf AI voice services. Never claims to be a human being.
-- **3 Call Objectives**:
-  1. Understand the user's request quickly and empathetically.
-  2. Provide accurate and useful information within available knowledge.
-  3. Escalate or redirect requests outside capabilities.
-- **Knowledge Boundaries**: Differentiates between what it knows (provided info, TTS features) vs. what it does not know (private data, unperformed actions).
-- **Guardrails & Never-Claim Rules**: Strictly refuses unauthorized actions or system prompt leakage. Never claims unperformed actions (refunds, bookings, orders). Responds with *"I’m not able to complete that action directly."* when unauthorized.
-- **Escalation Behavior**: Uses spoken escalation script: *"I’m not able to handle that directly. I can help with the things I’m authorized to do, or guide you to the appropriate support team."*
-- **Code-Mixed Language Support**: Supports English, Hindi, and Hindi-English code-mixing (Hinglish) by mirroring user input without forcing translation.
-- **Testing Completed**: Comprehensive red-team testing suite in `RED_TEAM.md` and 8 async LLM evaluation tests in `backend/tests/test_agent.py`.
-
----
-
-## 📁 Repository Structure
-
-```
-murf-livekit-starter/
-├── backend/                  # Python Voice AI Agent
-│   ├── src/
-│   │   └── agent.py          # Entrypoint, voice pipeline & function tools
-│   ├── tests/
-│   │   └── test_agent.py     # Async LLM evaluation tests
-│   ├── pyproject.toml        # uv package configuration
-│   └── requirements.txt      # Deployment requirement list
-├── frontend/                 # Next.js Web UI
-│   ├── app/                  # App Router pages and token API
-│   ├── components/           # UI components, visualizers, control bar
-│   ├── app-config.ts         # Branding, visualizer, & accent configurations
-│   ├── package.json          # Node dependencies
-│   └── .prettierrc           # Cross-platform code style rules
-├── .github/workflows/ci.yml  # GitHub Actions CI workflow
-├── package.json              # Monorepo root scripts
-├── start_app.ps1             # PowerShell single-command launcher
-└── start_app.sh              # Bash single-command launcher
-```
-
----
-
-## 🚢 Deployment
-
-### Frontend (Vercel)
-1. Push your repository to GitHub.
-2. Import the repository in [Vercel](https://vercel.com).
-3. Set the Root Directory to `frontend`.
-4. Configure environment variables (`LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`).
-5. Deploy!
-
-### Backend (Railway / Docker / Cloud Run)
-1. Set up a Python 3.11 server environment or Docker container.
-2. Install dependencies using `uv sync` or `pip install -r backend/requirements.txt`.
-3. Set all required environment variables in your hosting provider configuration.
-4. Set the start command: `python backend/src/agent.py start`.
-
----
-
-## 📞 Day 6 — Complete Outbound Call Implementation (LiveKit SIP + Linphone)
-
-The Local Commerce Voice Agent supports making **Outbound Voice Calls** to verified customers regarding order updates using LiveKit SIP and Linphone.
-
-### 1. Architecture Flow
-
-```mermaid
-flowchart TD
-    A["🤖 Local Commerce Voice Agent"] --> B["⚡ LiveKit Agent (outbound/agent.py)"]
-    B --> C["🌐 LiveKit Telephony (LiveKit Cloud)"]
-    C --> D["🔌 Outbound SIP Trunk (sip.linphone.org)"]
-    D --> E["📱 Linphone SIP Network"]
-    E --> F["📲 Linphone App / Phone"]
-    F <-->|"🗣️ Two-Way Audio (TTS + STT)"| A
-```
-
----
-
-### 2. Linphone Account Setup
-
-1. Create a free account at [linphone.org](https://www.linphone.org).
-2. Note your SIP address format:
+1. **Start Backend Voice Agent**:
+   ```bash
+   cd backend
+   uv run python src/agent.py dev
    ```
-   sip:<YOUR_LINPHONE_USERNAME>@sip.linphone.org
+
+2. **Start Frontend Web Application**:
+   ```bash
+   cd frontend
+   pnpm dev
    ```
-3. Install Linphone app on your desktop or mobile device.
-4. Log into your account in the Linphone app.
-5. **CRITICAL LINPHONE APP SETTING**:
-   - Open Linphone **Settings** → **Calls** → **Advanced calls settings**
-   - Turn **Media encryption mandatory** to **OFF** (LiveKit SIP trunk communicates over TLS with standard RTP stream).
+
+Open your browser at `http://localhost:3000` to interact with the Voice Agent.  
+Visit `http://localhost:3000/analytics` for the Call Analytics Dashboard.  
+Visit `http://localhost:3000/support` for the Human Escalation Support Portal.
 
 ---
 
-### 3. LiveKit Cloud Setup Guide
+## 10. Testing Guide
 
-1. Log into your [LiveKit Cloud Console](https://cloud.livekit.io).
-2. Select your project and navigate to **Telephony** → **SIP Trunks**.
-3. Click **Create Outbound Trunk**.
-4. Configure the following parameters:
-   - **Name**: `linphone-trunk`
-   - **Address**: `sip.linphone.org`
-   - **Transport**: `SIP_TRANSPORT_TLS`
-   - **Numbers**: `sip:<YOUR_LINPHONE_USERNAME>` (e.g., `sip:ramesh@sip.linphone.org`)
-5. Save the trunk and copy the generated **Trunk ID** (starts with `ST_...`).
+### 1. Browser Voice Conversation
+- Open `http://localhost:3000`, click **Start Voice Assistant**, and speak into your microphone.
+- Check that the UI shifts smoothly between `LISTENING` and `SPEAKING` states.
 
----
+### 2. Multilingual & Hinglish Speech
+- **English**: *"Do you have Basmati Rice available?"*
+- **Hinglish**: *"Basmati rice price kitna hai aur stock hai kya?"*
+- **Hindi (Devanagari)**: *"बासमती चावल की कीमत क्या है?"*
 
-### 4. Required Environment Variables
+### 3. Persistent Memory Test
+- Say: *"My name is Ramesh and I prefer evening delivery."*
+- Agent asks for consent: *"Would you like me to remember your name and preference?"*
+- Say: *"Yes, remember it."*
+- Disconnect call, refresh browser, restart call, and greet: *"Hi Anisha!"*
+- Agent responds: *"Welcome back, Ramesh! How can I help you today?"*
 
-Add the following to `backend/.env.local`:
+### 4. Real Data Catalogue Tool Test
+- Say: *"How much for 2 packs of Basmati Rice?"*
+- Verify agent calls `calculate_order_total` and returns ₹640 (2 x ₹320).
 
-```env
-LIVEKIT_URL=wss://your-project.livekit.cloud
-LIVEKIT_API_KEY=your_livekit_api_key
-LIVEKIT_API_SECRET=your_livekit_api_secret
+### 5. Specialist Agent Handoff Test
+- Say: *"Mujhe mera order return karna hai, item damaged mila tha."*
+- Verify agent speaks handoff transition sentence and transfers control to Returns & Refunds Specialist.
 
-# Day 6 Outbound Telephony
-LIVEKIT_SIP_OUTBOUND_TRUNK_ID=ST_xxxxxx
-LINPHONE_USERNAME=your_linphone_username
-LINPHONE_SIP_ADDRESS=sip:your_linphone_username@sip.linphone.org
-MAX_RETRIES=2
-```
+### 6. Human Support Escalation Test
+- Say: *"Mera payment kat gaya hai par order confirm nahi hua. Mujhe refund chahiye!"*
+- Specialist requests permission to create escalation ticket.
+- Say: *"Haan, support team ko bhej do."*
+- Verify reference ID (e.g. `LC-2026-0001`) is spoken and visible in `/support` portal.
 
----
-
-### 5. Starting the Outbound Agent & Making Calls
-
-#### Step 1: Start the Outbound Voice Agent
-In terminal 1:
+### 7. Automated Backend Unit Tests
 ```bash
 cd backend
-uv run python src/telephony/outbound/agent.py dev
-```
-
-#### Step 2: Trigger Outbound Dial
-In terminal 2:
-```bash
-cd backend
-uv run python src/telephony/outbound/dial.py --to <YOUR_LINPHONE_USERNAME>
+uv run pytest tests/test_catalogue.py tests/test_order_calculator.py tests/test_memory.py tests/test_escalation.py tests/test_handoff.py
 ```
 
 ---
 
-### 6. Verified Test Order (Part 23)
+## 11. Troubleshooting
 
-The outbound agent automatically seeds a verified test order into the SQLite database (`local_commerce_memory.db`):
-
-- **Customer Name**: Ramesh
-- **Product Name**: Basmati Rice
-- **Quantity**: 2 packs
-- **Price**: ₹320.00 / pack
-- **Estimated Total**: ₹640.00
-- **Status**: `PENDING`
-
----
-
-### 7. Test Call Scenarios & Expected Behavior
-
-#### Scenario A: Order Status Query (English / Hindi / Hinglish)
-- **Agent**: *"Hello, this is the Local Commerce Assistant calling about your recent order. I'm calling to provide a verified order update. If this isn't a good time, you can end the call at any time. May I confirm that I'm speaking with you?"*
-- **User**: *"हाँ, बताइए। मेरा order status क्या है?"*
-- **Agent**: *"आपका ऑर्डर अभी pending है।"*
-- **User**: *"Achha, mera order mein kya hai?"*
-- **Agent**: *"Your order includes 2 packs of Basmati Rice with an estimated total of ₹640."*
-
-#### Scenario B: Mandatory Opt-Out (Part 13)
-- **User**: *"Don't call me again"* or *"Stop calling me"* or *"Mujhe dobara call mat karna"*
-- **Agent**: *"Understood. I won't continue this call."*
-- Call immediately disconnects and `USER_OPTED_OUT` is logged. Future dial attempts to this number are blocked automatically.
-
-#### Scenario C: No Answer / Busy / Retry Limit (Part 14 & 15)
-- If call is rejected or unanswered, outcome `NO_ANSWER` or `REJECTED` is recorded.
-- Retry policy limits retries to `MAX_RETRIES=2`.
+| Issue | Root Cause | Resolution |
+|---|---|---|
+| **Microphone Permission Error** | Browser blocked microphone access | Click camera/mic icon in browser address bar, set permission to *Allow*, and click *Try Again*. |
+| **LiveKit Connection Failure** | Invalid `LIVEKIT_URL` or API credentials | Verify credentials match your LiveKit Cloud console in both `backend/.env.local` and `frontend/.env.local`. |
+| **TTS Audio Silence** | Invalid `MURF_API_KEY` | Verify Murf API Key in `backend/.env.local`. Ensure active API quota. |
+| **Hindi STT Misinterpretation** | Noise in audio input | Use standard headset microphone and speak clearly near the mic. |
+| **Database Lock Errors** | Concurrent process file access | Ensure SQLite file `local_commerce_memory.db` is not open in external database viewer software. |
 
 ---
 
-### 8. Outbound Call Outcomes Supported
+## 12. Privacy & Security
 
-- `ANSWERED`: Call answered by user.
-- `NO_ANSWER`: Linphone app rang but went unanswered.
-- `BUSY`: User declined/rejected the call on Linphone.
-- `REJECTED`: SIP server returned rejection code (e.g. 486 Busy).
-- `VOICEMAIL`: Reached voicemail.
-- `USER_OPTED_OUT`: Customer requested to stop receiving calls.
-- `COMPLETED`: Order status conversation completed normally.
-- `FAILED`: Network or SIP trunk connection failure.
-- `USER_HANGUP`: User hung up mid-call.
+- **Strict Key Protection**: All secrets are stored in `.env.local` files ignored by Git.
+- **Explicit Consent Policy**: Personal facts (name, delivery slot) are saved to database memory ONLY after explicit user confirmation.
+- **Sensitive Data Exclusion**: The agent NEVER requests or stores passwords, OTPs, credit card numbers, PINs, or CVV codes.
+- **Escalation Data Minimization**: Escalation tickets record concise issue summaries rather than full raw audio transcripts.
 
 ---
 
-### 9. Troubleshooting Outbound Calls
+## 13. Demo Links
 
-| Problem | Cause | Solution |
-| ------- | ----- | -------- |
-| **Linphone doesn't ring** | App offline or Linphone encryption setting | Verify Linphone app is running and logged in. Set *Media encryption mandatory* to **OFF** in Linphone Settings. |
-| **SIP trunk not connecting** | Invalid `LIVEKIT_SIP_OUTBOUND_TRUNK_ID` | Check trunk status in LiveKit Cloud console → Telephony → SIP Trunks. |
-| **LiveKit Auth Failure** | Incorrect API Key or Secret | Verify `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` in `backend/.env.local`. |
-| **Call immediately disconnects** | Safety pre-check failed or user opted out | Run `uv run python src/telephony/outbound/dial.py` to see detailed error pre-check output. |
-| **STT/TTS audio not heard** | Linphone audio device permission | Grant microphone/speaker permissions to Linphone application. |
+- **Live Demo**: `[ADD YOUR LIVE URL]`
+- **GitHub Repository**: [https://github.com/sahuanshika557-sys/murf-ai.git](https://github.com/sahuanshika557-sys/murf-ai.git)
+- **Demo Video**: `[ADD YOUR VIDEO URL]`
 
 ---
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
