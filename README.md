@@ -354,9 +354,9 @@ uv run pytest tests/test_catalogue.py tests/test_order_calculator.py tests/test_
 
 ## 13. Demo Links
 
-- **Live Demo**: `[ADD YOUR LIVE URL]`
+- **Live Demo**: `[https://dukandar-ai-mu.vercel.app/]`
 - **GitHub Repository**: [https://github.com/sahuanshika557-sys/murf-ai.git](https://github.com/sahuanshika557-sys/murf-ai.git)
-- **Demo Video**: `[ADD YOUR VIDEO URL]`
+- **Demo Video**: `[[ADD YOUR VIDEO URL](https://www.linkedin.com/posts/anshika-sahu-40a78737a_10daysofvoiceagents-voiceforbharat-voiceai-activity-7494295592404357120-pnIE?utm_source=share&utm_medium=member_desktop&rcm=ACoAAF27LYoB_h-5SEWux-2TkI4LhqC5NB4yxmk)]`
 
 ---
 
