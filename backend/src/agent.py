@@ -3,6 +3,8 @@ import json
 import logging
 import os
 import sys
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 if sys.platform == "win32":
     try:
@@ -927,11 +929,28 @@ async def my_agent(ctx: JobContext):
 
         greeting = f"Welcome back, {name}! How can I help you today?"
 
-    await session.say(
-        greeting,
-        allow_interruptions=True,
-    )
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"status":"ok","service":"vaanid-voice-agent"}')
+
+    def log_message(self, format, *args):
+        return
+
+
+def start_health_server():
+    port = int(os.getenv("PORT", "10000"))
+    try:
+        httpd = HTTPServer(("0.0.0.0", port), HealthHandler)
+        thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+        thread.start()
+        logger.info(f"Health check HTTP server started on port {port}")
+    except Exception as e:
+        logger.warning(f"Could not start health check server on port {port}: {e}")
 
 
 if __name__ == "__main__":
+    start_health_server()
     cli.run_app(server)
