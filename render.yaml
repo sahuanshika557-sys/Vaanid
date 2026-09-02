@@ -1,0 +1,18 @@
+services:
+  - type: worker
+    name: vaanid-voice-agent
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    envVars:
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: MURF_API_KEY
+        sync: false
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
