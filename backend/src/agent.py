@@ -18,6 +18,7 @@ from livekit.agents import (
     Agent,
     AgentServer,
     AgentSession,
+    AutoSubscribe,
     JobContext,
     JobProcess,
     RunContext,
@@ -41,8 +42,11 @@ from database.memory import (
     update_last_interaction,
 )
 from services.handoff_service import HandoffContext
+from tools.cart_tool import manage_cart_data
 from tools.catalogue_tool import lookup_product_data
+from tools.merchant_copilot_tools import query_merchant_copilot
 from tools.order_tool import calculate_order_data
+from tools.recommendation_tool import recommend_products_data
 from tools.returns_refunds_tools import (
     check_refund_status_data,
     check_return_eligibility_data,
@@ -133,8 +137,11 @@ CUSTOMER MEMORY & MANDATORY CONSENT (DAY 4):
 HUMAN SUPPORT ESCALATION (DAY 7):
 - Ask explicit permission before calling create_escalation ("May I share that with the support team?").
 
-VOICE-FIRST RESPONSE STYLE:
-- Short sentences under 20 words. No markdown, tables, bullet points, or technical terms.
+VOICE-FIRST ULTRA-FAST RESPONSE STYLE:
+- Keep every response snappy, direct, and under 12-15 words.
+- Answer immediately in the caller's language (Hindi / Hinglish / English).
+- No unnecessary pleasantries or fluff. State the product details, prices, or cart actions directly.
+- Example: "Basmati rice 5kg ka pack 320 rupaye ka hai. Kya cart me add karein?"
 """
 
 
@@ -577,6 +584,90 @@ class Assistant(Agent):
         return res
 
     # =========================================================================
+    # AGENTIC COMMERCE TOOL 10: AI PRODUCT RECOMMENDATIONS (TRACK 1)
+    # =========================================================================
+    @function_tool
+    async def recommend_products(
+        self,
+        context: RunContext,
+        budget: float | None = None,
+        category: str | None = None,
+        query: str | None = None,
+    ) -> dict:
+        """Recommend verified in-stock products based on customer budget, category, or natural request.
+
+        WHEN TO CALL:
+        - When a customer asks for recommendations (e.g. 'Suggest groceries under 2000', '₹1000 mein kitchen items batao').
+        - When recommending alternative or popular products.
+        """
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_STARTED: recommend_products budget={budget}, category='{category}'"
+        )
+        res = recommend_products_data(
+            query=query, budget=budget, category=category, user_id=self.user_id
+        )
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_COMPLETED: recommend_products count={res.get('count')}"
+        )
+        await self._publish_tool_event("recommend_products", res)
+        return res
+
+    # =========================================================================
+    # AGENTIC COMMERCE TOOL 11: SMART CART & CHECKOUT AGENT (TRACK 1)
+    # =========================================================================
+    @function_tool
+    async def manage_cart(
+        self,
+        context: RunContext,
+        action: str,
+        product_name: str | None = None,
+        quantity: float = 1.0,
+    ) -> dict:
+        """Autonomous cart and checkout manager for adding, removing, viewing, or initiating checkout.
+
+        WHEN TO CALL:
+        - When customer wants to add an item to cart (e.g. '2 kg rice add kar do').
+        - When customer wants to view current cart (e.g. 'Cart mein kya hai?').
+        - When customer wants to remove an item or clear cart.
+        - When customer initiates checkout or requests a payment link / QR.
+        """
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_STARTED: manage_cart action='{action}', product='{product_name}', qty={quantity}"
+        )
+        res = manage_cart_data(
+            action=action,
+            product_name=product_name,
+            quantity=quantity,
+            user_id=self.user_id,
+        )
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_COMPLETED: manage_cart success={res.get('success')}"
+        )
+        await self._publish_tool_event("manage_cart", res)
+        return res
+
+    # =========================================================================
+    # AGENTIC COMMERCE TOOL 12: MERCHANT COPILOT (TRACK 1)
+    # =========================================================================
+    @function_tool
+    async def merchant_copilot_query(
+        self, context: RunContext, query: str
+    ) -> dict:
+        """Answer merchant business analytics questions (revenue, low stock, abandoned carts, top sellers).
+
+        WHEN TO CALL: When a merchant asks business intelligence questions.
+        """
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_STARTED: merchant_copilot_query query='{query}'"
+        )
+        res = query_merchant_copilot(query)
+        logger.info(
+            f"[VOICE_PIPELINE] TOOL_CALL_COMPLETED: merchant_copilot_query success={res.get('success')}"
+        )
+        await self._publish_tool_event("merchant_copilot_query", res)
+        return res
+
+    # =========================================================================
     # DAY 9 HANDOFF TOOL: MAIN AGENT -> RETURNS & REFUNDS SPECIALIST
     # =========================================================================
     @function_tool
@@ -737,7 +828,7 @@ def zero_load(*args, **kwargs) -> float:
     return 0.0
 
 
-server = AgentServer(port=0, load_threshold=10.0, load_fnc=zero_load)
+server = AgentServer(port=0, load_threshold=10.0, load_fnc=zero_load, num_idle_processes=1)
 
 
 def prewarm(proc: JobProcess):
@@ -748,7 +839,7 @@ def prewarm(proc: JobProcess):
 server.setup_fnc = prewarm
 
 
-AGENT_NAME = os.getenv("AGENT_NAME", "my-agent")
+AGENT_NAME = os.getenv("AGENT_NAME", "mindia")
 
 
 @server.rtc_session(agent_name=AGENT_NAME)
@@ -757,7 +848,10 @@ async def my_agent(ctx: JobContext):
         "room": ctx.room.name,
     }
 
-    init_db()
+    # Override dispatched cloud URL with direct regional URL to eliminate 15s region fetch timeout
+    direct_url = os.getenv("LIVEKIT_URL")
+    if direct_url and hasattr(ctx, "_info") and ctx._info:
+        ctx._info.url = direct_url
 
     assistant = Assistant(ctx=ctx)
 
@@ -773,17 +867,11 @@ async def my_agent(ctx: JobContext):
             voice="Anisha",
             locale="en-IN",
             style="Conversation",
-            tokenizer=tokenize.basic.SentenceTokenizer(min_sentence_len=2),
+            tokenizer=tokenize.basic.SentenceTokenizer(min_sentence_len=1),
             text_pacing=True,
         ),
-        turn_detection=MultilingualModel(),
         vad=ctx.proc.userdata["vad"],
-        preemptive_generation=True,
-    )
-
-    await ctx.connect()
-    logger.info(
-        f"[VOICE_PIPELINE] LIVEKIT_CONNECTED: Room '{ctx.room.name}' connected."
+        preemptive_generation=False,
     )
 
     user_id = await get_caller_identity(ctx)
@@ -800,6 +888,7 @@ async def my_agent(ctx: JobContext):
 
     ctx.add_shutdown_callback(_on_shutdown)
 
+    # Start session atomically (joins room + publishes audio track simultaneously)
     await session.start(
         agent=assistant,
         room=ctx.room,

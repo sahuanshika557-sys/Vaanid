@@ -156,12 +156,12 @@ function AgentStatusHeader({
     badgeColor = 'border-amber-500/30 bg-amber-500/10 text-amber-400';
     dotColor = 'bg-amber-400 animate-ping';
     label =
-      handoffInfo?.status === 'transferring'
-        ? `🔄 Connecting to ${handoffInfo.agentName}...`
-        : escalationInfo?.status === 'creating'
-          ? '📑 Preparing human support request...'
-          : catalogueInfo?.status === 'checking'
-            ? '🔎 Checking catalogue...'
+      escalationInfo?.status === 'creating'
+        ? '📑 Preparing human support request...'
+        : catalogueInfo?.status === 'checking'
+          ? '🔎 Checking catalogue...'
+          : handoffInfo?.agentName
+            ? `🔄 Processing with ${handoffInfo.agentName}...`
             : '💭 Assistant is thinking...';
   } else if (agentState === 'connecting' || agentState === 'initializing') {
     badgeColor = 'border-blue-500/30 bg-blue-500/10 text-blue-400';

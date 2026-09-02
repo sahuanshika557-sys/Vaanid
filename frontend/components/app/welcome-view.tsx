@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/shadcn/utils';
 import { getOrCreateCustomerId } from '@/lib/utils';
 import { CATALOGUE_ITEMS, type ProductItem } from '@/lib/product-images';
+import { AgentActivityTimeline } from '@/components/app/agent-activity-timeline';
+import { OmnichannelChat } from '@/components/app/omnichannel-chat';
+import { RevenueRecoveryCard } from '@/components/app/revenue-recovery-card';
 import {
   Activity,
   ArrowRight,
@@ -30,6 +33,7 @@ import {
   User,
   Users,
   XCircle,
+  Zap,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -257,6 +261,193 @@ export const WelcomeView = ({
               </span>
             </div>
           )}
+
+          {/* =================================================================== */}
+          {/* 1.5. ANIMATED 3D DASHBOARD SHOWCASE & REAL-LIFE INTERFACE */}
+          {/* =================================================================== */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.15 }}
+            className="relative w-full max-w-5xl my-4 group"
+          >
+            {/* Ambient Radial Pulsing Aura */}
+            <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-500 opacity-30 blur-2xl transition duration-1000 group-hover:opacity-50 animate-pulse" />
+
+            <div className="relative overflow-hidden rounded-3xl border border-emerald-500/40 bg-card/90 shadow-2xl backdrop-blur-2xl">
+              {/* Top Dashboard Header Bar */}
+              <div className="flex items-center justify-between border-b border-border/50 bg-background/80 px-6 py-3.5 backdrop-blur-md">
+                <div className="flex items-center gap-2">
+                  <span className="size-3 rounded-full bg-rose-500/80" />
+                  <span className="size-3 rounded-full bg-amber-500/80" />
+                  <span className="size-3 rounded-full bg-emerald-500/80" />
+                  <span className="ml-3 font-mono text-xs font-bold text-muted-foreground">
+                    dukanvaani.ai/live-terminal • Real-Time Voice Commerce Engine
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400 border border-emerald-500/20">
+                    <span className="size-1.5 animate-ping rounded-full bg-emerald-400" />
+                    LIVE TELEMETRY
+                  </span>
+                </div>
+              </div>
+
+              {/* High-Definition Dashboard Interface Graphic with Floating Real-Life Layers */}
+              <div className="relative h-80 sm:h-96 md:h-[420px] w-full overflow-hidden bg-zinc-950">
+                <img
+                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1600&q=80"
+                  alt="DukanVaani AI Dashboard"
+                  className="size-full object-cover object-center opacity-40 transition-transform duration-700 group-hover:scale-103"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+
+                {/* Floating Animated Badge 1: Live Voice Order */}
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  className="absolute top-6 right-6 hidden sm:flex items-center gap-3 rounded-2xl border border-emerald-500/40 bg-background/90 p-3.5 shadow-2xl backdrop-blur-xl max-w-xs text-left"
+                >
+                  <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+                    <ShoppingBag className="size-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[11px] font-bold text-emerald-400">Live Voice Cart</span>
+                    </div>
+                    <p className="text-foreground text-xs font-bold leading-snug">5kg Basmati Rice + 1L Oil</p>
+                    <span className="text-[11px] font-mono text-emerald-400 font-extrabold">₹485 • Verified</span>
+                  </div>
+                </motion.div>
+
+                {/* Floating Animated Badge 2: Instant UPI Payment */}
+                <motion.div
+                  animate={{ y: [0, 8, 0] }}
+                  transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                  className="absolute bottom-10 left-6 hidden sm:flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-background/90 p-3.5 shadow-2xl backdrop-blur-xl max-w-xs text-left"
+                >
+                  <div className="flex size-10 items-center justify-center rounded-xl bg-teal-500/20 text-teal-400 shrink-0">
+                    <CheckCircle2 className="size-5" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-teal-400">Instant Settlement</span>
+                    <p className="text-foreground text-xs font-bold leading-snug">UPI ID: sharma.kirana@upi</p>
+                    <span className="text-[11px] text-muted-foreground">Settled in 0.4s</span>
+                  </div>
+                </motion.div>
+
+                {/* Floating Center Voice Soundwave Overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 space-y-4">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="flex size-20 items-center justify-center rounded-full bg-linear-to-tr from-emerald-600 via-teal-500 to-emerald-400 text-white shadow-2xl shadow-emerald-500/40 ring-4 ring-emerald-400/40 cursor-pointer"
+                    onClick={onStartCall}
+                  >
+                    <Mic className="size-9 animate-pulse" />
+                  </motion.div>
+
+                  <div className="space-y-1">
+                    <h3 className="text-foreground text-xl sm:text-2xl font-extrabold tracking-tight">
+                      {lang === 'en' ? 'Anisha AI Active Voice Hub' : 'अनीशा AI लाइव वॉइस हब'}
+                    </h3>
+                    <p className="text-muted-foreground text-xs sm:text-sm max-w-md">
+                      {lang === 'en'
+                        ? 'Click the microphone to start shopping with your voice.'
+                        : 'वॉइस से ग्रोसरी शॉपिंग शुरू करने के लिए माइक पर क्लिक करें।'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* =================================================================== */}
+          {/* INTERACTIVE REAL-LIFE STORE BANNER */}
+          {/* =================================================================== */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="group relative w-full overflow-hidden rounded-3xl border border-emerald-500/30 bg-card/60 p-6 shadow-2xl backdrop-blur-2xl text-left transition-all duration-300 hover:border-emerald-500/60"
+          >
+            {/* Background High-Def Kirana Store Image with Gradient Overlay */}
+            <div className="absolute inset-0 -z-10 overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=1600&q=80"
+                alt="Sharma Kirana & General Store"
+                className="size-full object-cover opacity-20 transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-background/70" />
+            </div>
+
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="space-y-2 max-w-xl">
+                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
+                  <Store className="size-3.5" />
+                  <span>Sharma Kirana & General Mart • Kanpur Main Market</span>
+                </div>
+                <h2 className="text-foreground text-2xl font-extrabold sm:text-3xl tracking-tight">
+                  {lang === 'en'
+                    ? 'Hyperlocal Voice Commerce in Action'
+                    : 'आपकी अपनी दुकान — सुपरफास्ट वॉइस AI के साथ'}
+                </h2>
+                <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
+                  {lang === 'en'
+                    ? 'Experience instant Kirana shopping with Anisha AI: check stock, add items to cart, compute discounts, and manage orders with 100% natural voice in Hindi & Hinglish.'
+                    : 'अनीशा AI के साथ रियल-टाइम में ग्रोसरी खोजें, कार्ट में सामान जोड़ें, बिल कैलकुलेट करें और रिटर्न प्रोसेस करें — बिना किसी टाइपिंग के!'}
+                </p>
+              </div>
+
+              {/* Live Assistant Quick Stats Box */}
+              <div className="flex flex-col gap-2 rounded-2xl border border-emerald-500/30 bg-background/80 p-4 backdrop-blur-md shrink-0 w-full md:w-64">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground">Voice Engine</span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Murf Falcon ⚡ 110ms
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground">Speech Recognition</span>
+                  <span className="text-[11px] font-bold text-teal-400">Deepgram Nova-3 Multi</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground">AI Intelligence</span>
+                  <span className="text-[11px] font-bold text-sky-400">Gemini 3.5 Flash Lite</span>
+                </div>
+                <div className="mt-1 pt-2 border-t border-border/50 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Delivery Speed</span>
+                  <span className="font-bold text-emerald-400">⚡ 15 Mins Hyperlocal</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Quick Voice Action Pills */}
+            <div className="mt-6 pt-4 border-t border-border/40">
+              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block mb-2.5">
+                {lang === 'en' ? '🎙️ Try Saying These to Anisha:' : '🎙️ अनीशा से ये बोलकर ट्राई करें:'}
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { text: '🗣️ "बासमती चावल 5 किलो कार्ट में जोड़ो"', action: 'Basmati Rice 5kg Add' },
+                  { text: '🗣️ "फॉर्च्यून सनफ्लावर तेल का क्या दाम है?"', action: 'Oil Price Check' },
+                  { text: '🗣️ "मेरा टोटल बिल कितना हुआ?"', action: 'Calculate Bill' },
+                  { text: '🗣️ "₹500 में ग्रोसरी कॉम्बो बताओ"', action: 'Smart Recommendation' },
+                  { text: '🗣️ "पिछला ऑर्डर रिटर्न करना है"', action: 'Returns & Refunds' },
+                ].map((pill, idx) => (
+                  <motion.button
+                    key={idx}
+                    whileHover={{ scale: 1.03, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={onStartCall}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground transition-all hover:border-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 shadow-xs"
+                  >
+                    <span>{pill.text}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         </motion.section>
 
         {/* =================================================================== */}
@@ -503,6 +694,27 @@ export const WelcomeView = ({
         </motion.section>
 
         {/* =================================================================== */}
+        {/* AGENTIC COMMERCE 1: OMNICHANNEL CHAT & LIVE SMART CART (TRACK 1) */}
+        {/* =================================================================== */}
+        <section id="commerce" className="w-full text-left">
+          <OmnichannelChat />
+        </section>
+
+        {/* =================================================================== */}
+        {/* AGENTIC COMMERCE 2: REVENUE RECOVERY & APPROVALS (TRACK 1) */}
+        {/* =================================================================== */}
+        <section id="recovery" className="w-full text-left">
+          <RevenueRecoveryCard />
+        </section>
+
+        {/* =================================================================== */}
+        {/* AGENTIC COMMERCE 3: REAL-TIME ACTIVITY STREAM & DECISIONS (TRACK 1) */}
+        {/* =================================================================== */}
+        <section id="activity" className="w-full text-left">
+          <AgentActivityTimeline />
+        </section>
+
+        {/* =================================================================== */}
         {/* 4.5. FEATURED PRODUCT CATALOGUE GRID (ITEM IMAGES & ANIMATIONS) */}
         {/* =================================================================== */}
         <motion.section
@@ -555,54 +767,94 @@ export const WelcomeView = ({
             ).map((item) => (
               <motion.div
                 key={item.id}
-                whileHover={{ y: -4, scale: 1.01 }}
+                whileHover={{ y: -5, scale: 1.02 }}
                 transition={{ duration: 0.2 }}
-                className="group border-border/50 bg-background/60 relative overflow-hidden rounded-2xl border p-4 shadow-sm backdrop-blur-md transition-all hover:border-emerald-500/40 hover:shadow-lg"
+                className="group border-border/50 bg-background/70 relative overflow-hidden rounded-3xl border p-4 shadow-md backdrop-blur-md transition-all hover:border-emerald-500/50 hover:shadow-xl flex flex-col justify-between"
               >
-                <div className="flex items-start gap-4">
+                <div>
                   {/* Item Image with Animated Zoom */}
-                  <div className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-emerald-500/20 bg-muted/40">
+                  <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-emerald-500/20 bg-muted/40 mb-3">
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="size-full object-cover transition-transform duration-700 group-hover:scale-108"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                    <span className="absolute bottom-1 left-1.5 text-[10px] font-mono font-bold text-white drop-shadow-md">
-                      {item.unit}
-                    </span>
-                  </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    
+                    {/* Top Badges */}
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                      {item.badge && (
+                        <span className="rounded-full bg-emerald-600/90 text-white px-2.5 py-0.5 text-[10px] font-bold shadow-md backdrop-blur-sm">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="flex flex-1 flex-col space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                        {item.category}
-                      </span>
+                    <div className="absolute top-2.5 right-2.5">
                       <span
                         className={cn(
-                          'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                          'text-[10px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md shadow-sm',
                           item.stock > 5
-                            ? 'bg-emerald-500/10 text-emerald-400'
+                            ? 'bg-emerald-500/90 text-white'
                             : item.stock > 0
-                              ? 'bg-amber-500/10 text-amber-400'
-                              : 'bg-rose-500/10 text-rose-400'
+                              ? 'bg-amber-500/90 text-white'
+                              : 'bg-rose-500/90 text-white'
                         )}
                       >
                         {item.stock > 5 ? 'In Stock' : item.stock > 0 ? `Low (${item.stock})` : 'Out of Stock'}
                       </span>
                     </div>
 
-                    <h4 className="text-foreground font-bold text-sm leading-tight group-hover:text-emerald-400 transition-colors">
+                    {/* Bottom Image Overlay Info */}
+                    <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between text-white">
+                      <span className="text-xs font-mono font-bold drop-shadow-md">
+                        {item.unit}
+                      </span>
+                      {item.rating && (
+                        <span className="flex items-center gap-1 text-[11px] font-bold bg-black/50 px-2 py-0.5 rounded-md backdrop-blur-md">
+                          ⭐ {item.rating}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                        {item.category}
+                      </span>
+                      <span className="text-muted-foreground text-[11px] font-medium truncate max-w-[140px]">
+                        📍 {item.location}
+                      </span>
+                    </div>
+
+                    <h4 className="text-foreground font-bold text-base leading-snug group-hover:text-emerald-400 transition-colors">
                       {item.name}
                     </h4>
 
-                    <div className="flex items-baseline justify-between pt-1">
-                      <span className="text-emerald-400 font-mono text-base font-extrabold">
-                        ₹{item.price}
-                      </span>
-                      <span className="text-muted-foreground text-[11px]">{item.seller}</span>
-                    </div>
+                    <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed">
+                      {item.description}
+                    </p>
                   </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs text-muted-foreground block font-medium">Price:</span>
+                    <span className="text-emerald-400 font-mono text-xl font-extrabold">
+                      ₹{item.price}
+                    </span>
+                  </div>
+
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onStartCall}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-linear-to-r from-emerald-600 to-teal-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-500/20 hover:from-emerald-500 hover:to-teal-500 transition-all"
+                  >
+                    <Mic className="size-3.5" />
+                    <span>Ask Anisha</span>
+                  </motion.button>
                 </div>
               </motion.div>
             ))}

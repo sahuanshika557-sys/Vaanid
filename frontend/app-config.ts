@@ -33,10 +33,10 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG_DEFAULTS: AppConfig = {
-  companyName: 'Dukandar AI',
-  pageTitle: 'Dukandar AI — Local Commerce Voice Assistant',
+  companyName: 'DukanVaani AI',
+  pageTitle: 'DukanVaani AI — Turn Every Voice Into Commerce',
   pageDescription:
-    'Smart AI voice assistant for local shops and businesses powered by Murf Falcon TTS and LiveKit Agents',
+    'Autonomous Multilingual AI Voice & Agentic Commerce Platform for Bharat. Discover products, build smart carts, recover revenue, and empower local merchants through voice.',
 
   supportsChatInput: true,
   supportsVideoInput: true,
@@ -69,7 +69,7 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   // audioVisualizerType: 'aura',
 
   // agent dispatch configuration
-  agentName: process.env.NEXT_PUBLIC_AGENT_NAME ?? process.env.AGENT_NAME ?? 'Indiabuddy',
+  agentName: process.env.NEXT_PUBLIC_AGENT_NAME ?? 'mindia',
 
   // LiveKit Cloud Sandbox configuration
   sandboxId: undefined,

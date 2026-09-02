@@ -8,9 +8,13 @@ export type Translations = Record<string, { en: string; hi: string }>;
 
 export const translations: Translations = {
   // Navigation & Brand
-  brandName: { en: 'Local Commerce Voice Assistant', hi: 'स्थानीय कॉमर्स वॉइस असिस्टेंट' },
-  brandSubtitle: { en: 'Voice AI Commerce Platform', hi: 'वॉइस एआई कॉमर्स प्लेटफ़ॉर्म' },
+  brandName: { en: 'DukanVaani AI', hi: 'दुकानवाणी एआई' },
+  brandSubtitle: { en: 'Dukan Ki Apni Awaaz • Voice Commerce', hi: 'दुकान की अपनी आवाज़ • वॉइस कॉमर्स' },
   navOverview: { en: 'Overview', hi: 'अवलोकन' },
+  navAICommerce: { en: 'AI Commerce', hi: 'एआई कॉमर्स' },
+  navCopilot: { en: 'Merchant Copilot', hi: 'मर्चेंट कोपायलट' },
+  navRecovery: { en: 'Revenue Recovery', hi: 'राजस्व रिकवरी' },
+  navActivity: { en: 'Agent Activity', hi: 'एजेंट गतिविधि' },
   navAnalytics: { en: 'Analytics', hi: 'विश्लेषण' },
   navConversations: { en: 'Conversations', hi: 'बातचीत' },
   navAgents: { en: 'Agents', hi: 'एजेंट' },
@@ -20,10 +24,10 @@ export const translations: Translations = {
   dashboardBreadcrumb: { en: 'Dashboard', hi: 'डैशबोर्ड' },
 
   // Hero Section
-  heroTitle: { en: 'Your Local Commerce Voice Assistant', hi: 'आपका स्थानीय कॉमर्स वॉइस असिस्टेंट' },
+  heroTitle: { en: 'Turn Every Voice Into Commerce.', hi: 'हर आवाज़ को व्यापार में बदलें।' },
   heroSubtitle: {
-    en: 'Help customers discover products, check availability, track enquiries and connect with support — naturally through voice.',
-    hi: 'ग्राहकों को उत्पाद खोजने, उपलब्धता जाँचने, ऑर्डर ट्रैक करने और सहायता प्राप्त करने में आवाज़ के माध्यम से मदद करें।',
+    en: "DukanVaani AI empowers Bharat's local merchants with multilingual AI voice agents — discovering products, calculating orders, creating payment intents, and automating revenue recovery.",
+    hi: 'दुकानवाणी एआई भारत के स्थानीय व्यापारियों को बहुभाषी एआई वॉइस एजेंट प्रदान करता है — उत्पाद खोजना, ऑर्डर बनाना, भुगतान और राजस्व रिकवरी।',
   },
   liveIndicator: { en: 'LIVE ASSISTANT ONLINE', hi: 'लाइव असिस्टेंट ऑनलाइन' },
   murfBadge: { en: 'Murf Falcon TTS (~55ms)', hi: 'मर्फ़ फाल्कन टीटीएस (~55ms)' },

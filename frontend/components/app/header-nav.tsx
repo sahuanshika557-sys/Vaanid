@@ -5,8 +5,11 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLanguage } from '@/components/app/language-context';
 import { ThemeToggle } from '@/components/app/theme-toggle';
+import { JudgeDemoModal } from '@/components/app/judge-demo-modal';
+import { MerchantCopilotModal } from '@/components/app/merchant-copilot-modal';
 import { cn } from '@/lib/shadcn/utils';
 import {
+  Activity,
   ArrowLeft,
   BarChart3,
   Bot,
@@ -18,8 +21,11 @@ import {
   MessageSquare,
   Settings,
   ShieldCheck,
+  Sparkles,
   Store,
+  TrendingUp,
   X,
+  Zap,
 } from 'lucide-react';
 
 interface HeaderNavProps {
@@ -32,6 +38,8 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
   const { lang, toggleLang, t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [judgeTourOpen, setJudgeTourOpen] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(false);
 
   const handleBack = () => {
     if (typeof window !== 'undefined' && window.history.length > 1 && pathname !== '/') {
@@ -57,9 +65,10 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
 
   const navLinks = [
     { href: '/', label: t('navOverview'), icon: Home, active: pathname === '/' },
+    { href: '/#commerce', label: 'AI Commerce', icon: Zap, active: false },
+    { href: '/#recovery', label: 'Revenue Recovery', icon: TrendingUp, active: false },
+    { href: '/#activity', label: 'Activity Stream', icon: Activity, active: false },
     { href: '/analytics', label: t('navAnalytics'), icon: BarChart3, active: pathname === '/analytics' },
-    { href: '/#conversations', label: t('navConversations'), icon: MessageSquare, active: false },
-    { href: '/#agents', label: t('navAgents'), icon: Bot, active: false },
     { href: '/support', label: t('navEscalations'), icon: Headphones, active: pathname === '/support' },
   ];
 
@@ -70,13 +79,18 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
           {/* Left: Brand Logo & Title */}
           <div className="flex items-center gap-2.5">
             <Link href="/" className="group flex items-center gap-2.5">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-linear-to-br from-emerald-500/20 via-teal-500/20 to-emerald-600/10 text-emerald-500 shadow-sm ring-1 ring-emerald-500/30 transition-transform duration-300 group-hover:scale-105">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-linear-to-br from-cyan-500/20 via-emerald-500/20 to-teal-600/10 text-cyan-400 shadow-sm ring-1 ring-cyan-500/30 transition-transform duration-300 group-hover:scale-105">
                 <Store className="size-5" />
               </div>
               <div className="flex flex-col">
-                <span className="text-foreground text-xs font-bold tracking-tight sm:text-sm md:text-base">
-                  {t('brandName')}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-foreground text-xs font-bold tracking-tight sm:text-sm md:text-base">
+                    {t('brandName')}
+                  </span>
+                  <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.2 text-[9px] font-bold text-cyan-400">
+                    DEMO MODE
+                  </span>
+                </div>
                 <span className="text-muted-foreground text-[10px] font-medium sm:text-[11px]">
                   {t('brandSubtitle')}
                 </span>
@@ -118,13 +132,22 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
               );
             })}
 
+            {/* Merchant Copilot Button */}
             <button
-              onClick={() => setSettingsOpen(true)}
-              aria-label="Open dashboard settings"
-              className="text-muted-foreground hover:bg-muted/70 hover:text-foreground flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all"
+              onClick={() => setCopilotOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1.5 text-xs font-bold text-indigo-400 transition-all hover:bg-indigo-500/20 shadow-xs"
             >
-              <Settings className="size-3.5" />
-              <span>{t('navSettings')}</span>
+              <Bot className="size-3.5" />
+              <span>Merchant Copilot</span>
+            </button>
+
+            {/* Hackathon Judge Tour Button */}
+            <button
+              onClick={() => setJudgeTourOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/15 px-3 py-1.5 text-xs font-bold text-cyan-300 transition-all hover:bg-cyan-500/25 shadow-sm ring-1 ring-cyan-500/30 animate-pulse"
+            >
+              <Sparkles className="size-3.5 text-cyan-400" />
+              <span>Judge Tour (3 Min)</span>
             </button>
           </nav>
 
@@ -280,6 +303,11 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
           </div>
         </div>
       )}
+
+      {/* Interactive Hackathon Modals */}
+      <JudgeDemoModal isOpen={judgeTourOpen} onClose={() => setJudgeTourOpen(false)} />
+      <MerchantCopilotModal isOpen={copilotOpen} onClose={() => setCopilotOpen(false)} />
     </>
   );
 }
+

@@ -118,3 +118,170 @@ CREATE INDEX IF NOT EXISTS idx_calls_channel ON calls(channel);
 CREATE INDEX IF NOT EXISTS idx_calls_language ON calls(language);
 CREATE INDEX IF NOT EXISTS idx_calls_intent ON calls(intent);
 """
+
+# =============================================================================
+# Agentic Commerce Schema Additions (VyapaarVoice AI)
+# =============================================================================
+
+CREATE_CARTS_TABLE = """
+CREATE TABLE IF NOT EXISTS carts (
+    cart_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    customer_name TEXT,
+    delivery_preference TEXT DEFAULT 'STANDARD',
+    subtotal REAL DEFAULT 0.0,
+    delivery_fee REAL DEFAULT 0.0,
+    discount REAL DEFAULT 0.0,
+    total_amount REAL DEFAULT 0.0,
+    status TEXT CHECK(status IN ('ACTIVE', 'CONVERTED', 'ABANDONED', 'CLEARED')) DEFAULT 'ACTIVE',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"""
+
+CREATE_CARTS_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_carts_user_id ON carts(user_id);
+CREATE INDEX IF NOT EXISTS idx_carts_status ON carts(status);
+"""
+
+CREATE_CART_ITEMS_TABLE = """
+CREATE TABLE IF NOT EXISTS cart_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cart_id TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    category TEXT,
+    unit TEXT,
+    quantity REAL NOT NULL,
+    unit_price REAL NOT NULL,
+    total_price REAL NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE
+);
+"""
+
+CREATE_CART_ITEMS_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON cart_items(product_id);
+"""
+
+CREATE_PAYMENT_INTENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS payment_intents (
+    payment_id TEXT PRIMARY KEY,
+    cart_id TEXT,
+    order_id TEXT,
+    user_id TEXT NOT NULL,
+    amount REAL NOT NULL,
+    currency TEXT DEFAULT 'INR',
+    provider TEXT DEFAULT 'MOCK',
+    status TEXT CHECK(status IN ('CREATED', 'PENDING', 'PAID', 'FAILED', 'CANCELLED')) DEFAULT 'CREATED',
+    payment_method TEXT DEFAULT 'UPI_QR',
+    transaction_ref TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"""
+
+CREATE_PAYMENT_INTENTS_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payment_intents(user_id);
+CREATE INDEX IF NOT EXISTS idx_payments_cart_id ON payment_intents(cart_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payment_intents(status);
+"""
+
+CREATE_AGENT_ACTIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS agent_actions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    action_id TEXT UNIQUE NOT NULL,
+    timestamp TEXT NOT NULL,
+    agent_name TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    tool_name TEXT,
+    user_id TEXT,
+    input_params TEXT,
+    output_result TEXT,
+    status TEXT CHECK(status IN ('SUCCESS', 'FAILURE', 'BLOCKED', 'APPROVAL_REQUIRED')) DEFAULT 'SUCCESS',
+    latency_ms INTEGER DEFAULT 0,
+    decision_reason TEXT
+);
+"""
+
+CREATE_AGENT_ACTIONS_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_agent_actions_agent_name ON agent_actions(agent_name);
+CREATE INDEX IF NOT EXISTS idx_agent_actions_action_type ON agent_actions(action_type);
+CREATE INDEX IF NOT EXISTS idx_agent_actions_timestamp ON agent_actions(timestamp);
+"""
+
+CREATE_COMMERCE_EVENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS commerce_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id TEXT UNIQUE NOT NULL,
+    event_type TEXT NOT NULL,
+    user_id TEXT,
+    agent_name TEXT,
+    title TEXT NOT NULL,
+    details TEXT,
+    timestamp TEXT NOT NULL
+);
+"""
+
+CREATE_COMMERCE_EVENTS_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_commerce_events_type ON commerce_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_commerce_events_timestamp ON commerce_events(timestamp);
+"""
+
+CREATE_FOLLOWUP_SUGGESTIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS followup_suggestions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    suggestion_id TEXT UNIQUE NOT NULL,
+    customer_id TEXT NOT NULL,
+    customer_name TEXT,
+    suggestion_type TEXT CHECK(suggestion_type IN ('ABANDONED_CART', 'REPEAT_ORDER', 'LOW_STOCK_ALERT', 'PROMOTION', 'FEEDBACK')) NOT NULL,
+    message TEXT NOT NULL,
+    target_products TEXT,
+    estimated_value REAL DEFAULT 0.0,
+    status TEXT CHECK(status IN ('PENDING_APPROVAL', 'APPROVED', 'DISMISSED', 'SENT')) DEFAULT 'PENDING_APPROVAL',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"""
+
+CREATE_FOLLOWUP_SUGGESTIONS_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_followup_status ON followup_suggestions(status);
+CREATE INDEX IF NOT EXISTS idx_followup_customer_id ON followup_suggestions(customer_id);
+"""
+
+CREATE_CUSTOMER_SEGMENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS customer_segments (
+    user_id TEXT PRIMARY KEY,
+    customer_name TEXT,
+    segment_name TEXT CHECK(segment_name IN ('NEW', 'RETURNING', 'LOYAL', 'HIGH_VALUE', 'AT_RISK', 'ABANDONED_CART')) NOT NULL,
+    total_spent REAL DEFAULT 0.0,
+    orders_count INTEGER DEFAULT 0,
+    reason TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"""
+
+CREATE_CUSTOMER_SEGMENTS_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_segments_segment_name ON customer_segments(segment_name);
+"""
+
+CREATE_RECOVERY_OPPORTUNITIES_TABLE = """
+CREATE TABLE IF NOT EXISTS recovery_opportunities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    opportunity_id TEXT UNIQUE NOT NULL,
+    cart_id TEXT,
+    user_id TEXT NOT NULL,
+    customer_name TEXT,
+    amount REAL NOT NULL,
+    priority TEXT CHECK(priority IN ('HIGH', 'MEDIUM', 'LOW')) DEFAULT 'MEDIUM',
+    recommended_action TEXT NOT NULL,
+    status TEXT CHECK(status IN ('OPEN', 'RECOVERED', 'DISMISSED')) DEFAULT 'OPEN',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"""
+
+CREATE_RECOVERY_OPPORTUNITIES_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_recovery_status ON recovery_opportunities(status);
+"""

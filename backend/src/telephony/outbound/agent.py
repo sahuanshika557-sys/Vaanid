@@ -297,7 +297,14 @@ AGENT_NAME = os.getenv("AGENT_NAME", "my-agent")
 
 @server.rtc_session(agent_name=AGENT_NAME)
 async def my_agent(ctx: JobContext):
-    ctx.log_context_fields = {"room": ctx.room.name}
+    ctx.log_context_fields = {
+        "room": ctx.room.name,
+    }
+
+    direct_url = os.getenv("LIVEKIT_URL")
+    if direct_url and hasattr(ctx, "_info") and ctx._info:
+        ctx._info.url = direct_url
+
     init_db()
     seed_test_order()
 

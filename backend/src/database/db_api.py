@@ -18,12 +18,23 @@ from database.memory import (  # noqa: E402
     get_analytics_failures,
     get_analytics_summary,
     get_analytics_trends,
+    get_customer_segments_db,
     get_escalation_by_ref,
     get_escalations,
+    get_followup_suggestions_db,
+    get_or_create_cart,
+    get_recent_agent_actions_db,
     get_recent_calls,
+    get_recent_commerce_events_db,
+    get_recovery_opportunities_db,
     init_db,
     update_escalation_status,
+    update_followup_status_db,
 )
+from services.payment_service import get_payment_provider
+from tools.cart_tool import manage_cart_data
+from tools.merchant_copilot_tools import get_sales_summary, query_merchant_copilot
+from tools.recommendation_tool import recommend_products_data
 
 
 def main():
@@ -157,6 +168,82 @@ def main():
                 success_condition=payload.get("success_condition"),
             )
             print(json.dumps({"success": True, "call": res}))
+
+        # =========================================================================
+        # Agentic Commerce Bridge Commands (VyapaarVoice AI)
+        # =========================================================================
+        elif cmd == "get_cart":
+            user_id = sys.argv[2] if len(sys.argv) > 2 else "cust_default"
+            cart = get_or_create_cart(user_id)
+            print(json.dumps({"success": True, "cart": cart}))
+
+        elif cmd == "manage_cart":
+            payload_json = sys.argv[2] if len(sys.argv) > 2 else "{}"
+            payload = json.loads(payload_json)
+            res = manage_cart_data(
+                action=payload.get("action", "view"),
+                product_name=payload.get("product_name"),
+                quantity=float(payload.get("quantity", 1.0)),
+                user_id=payload.get("user_id", "cust_default"),
+            )
+            print(json.dumps(res))
+
+        elif cmd == "create_payment":
+            payload_json = sys.argv[2] if len(sys.argv) > 2 else "{}"
+            payload = json.loads(payload_json)
+            provider = get_payment_provider()
+            res = provider.create_intent(
+                user_id=payload.get("user_id", "cust_default"),
+                amount=float(payload.get("amount", 0.0)),
+                cart_id=payload.get("cart_id"),
+            )
+            print(json.dumps(res))
+
+        elif cmd == "verify_payment":
+            payment_id = sys.argv[2] if len(sys.argv) > 2 else ""
+            provider = get_payment_provider()
+            res = provider.verify_payment(payment_id)
+            print(json.dumps(res))
+
+        elif cmd == "get_recommendations":
+            payload_json = sys.argv[2] if len(sys.argv) > 2 else "{}"
+            payload = json.loads(payload_json)
+            budget = float(payload["budget"]) if "budget" in payload and payload["budget"] is not None else None
+            res = recommend_products_data(
+                query=payload.get("query"),
+                budget=budget,
+                category=payload.get("category"),
+                user_id=payload.get("user_id", "cust_default"),
+            )
+            print(json.dumps(res))
+
+        elif cmd == "query_copilot":
+            query = sys.argv[2] if len(sys.argv) > 2 else "Store overview"
+            res = query_merchant_copilot(query)
+            print(json.dumps(res))
+
+        elif cmd == "get_commerce_events":
+            limit = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 20
+            events = get_recent_commerce_events_db(limit=limit)
+            actions = get_recent_agent_actions_db(limit=limit)
+            print(json.dumps({"success": True, "events": events, "actions": actions}))
+
+        elif cmd == "get_followups":
+            status = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] != "null" else None
+            followups = get_followup_suggestions_db(status=status)
+            recovery_opps = get_recovery_opportunities_db()
+            print(json.dumps({"success": True, "followups": followups, "recovery_opportunities": recovery_opps}))
+
+        elif cmd == "update_followup":
+            sug_id = sys.argv[2] if len(sys.argv) > 2 else ""
+            status = sys.argv[3] if len(sys.argv) > 3 else "APPROVED"
+            res = update_followup_status_db(sug_id, status)
+            print(json.dumps({"success": res, "suggestion_id": sug_id, "status": status}))
+
+        elif cmd == "get_customer_segments":
+            segments = get_customer_segments_db()
+            sales = get_sales_summary()
+            print(json.dumps({"success": True, "segments": segments, "sales": sales}))
 
         else:
             print(json.dumps({"error": f"Unknown command {cmd}"}))

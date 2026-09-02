@@ -8,17 +8,33 @@ from pathlib import Path
 from typing import Any
 
 from database.schema import (
+    CREATE_AGENT_ACTIONS_INDEX,
+    CREATE_AGENT_ACTIONS_TABLE,
     CREATE_CALL_LOGS_INDEX,
     CREATE_CALL_LOGS_TABLE,
     CREATE_CALLS_INDEX,
     CREATE_CALLS_TABLE,
+    CREATE_CART_ITEMS_INDEX,
+    CREATE_CART_ITEMS_TABLE,
+    CREATE_CARTS_INDEX,
+    CREATE_CARTS_TABLE,
+    CREATE_COMMERCE_EVENTS_INDEX,
+    CREATE_COMMERCE_EVENTS_TABLE,
+    CREATE_CUSTOMER_SEGMENTS_INDEX,
+    CREATE_CUSTOMER_SEGMENTS_TABLE,
     CREATE_CUSTOMERS_INDEX,
     CREATE_CUSTOMERS_TABLE,
     CREATE_ESCALATIONS_INDEX,
     CREATE_ESCALATIONS_TABLE,
+    CREATE_FOLLOWUP_SUGGESTIONS_INDEX,
+    CREATE_FOLLOWUP_SUGGESTIONS_TABLE,
     CREATE_OPT_OUTS_TABLE,
     CREATE_ORDERS_INDEX,
     CREATE_ORDERS_TABLE,
+    CREATE_PAYMENT_INTENTS_INDEX,
+    CREATE_PAYMENT_INTENTS_TABLE,
+    CREATE_RECOVERY_OPPORTUNITIES_INDEX,
+    CREATE_RECOVERY_OPPORTUNITIES_TABLE,
 )
 
 logger = logging.getLogger("agent.database")
@@ -58,6 +74,22 @@ def init_db(db_path: str | None = None) -> str:
             {CREATE_ESCALATIONS_INDEX}
             {CREATE_CALLS_TABLE}
             {CREATE_CALLS_INDEX}
+            {CREATE_CARTS_TABLE}
+            {CREATE_CARTS_INDEX}
+            {CREATE_CART_ITEMS_TABLE}
+            {CREATE_CART_ITEMS_INDEX}
+            {CREATE_PAYMENT_INTENTS_TABLE}
+            {CREATE_PAYMENT_INTENTS_INDEX}
+            {CREATE_AGENT_ACTIONS_TABLE}
+            {CREATE_AGENT_ACTIONS_INDEX}
+            {CREATE_COMMERCE_EVENTS_TABLE}
+            {CREATE_COMMERCE_EVENTS_INDEX}
+            {CREATE_FOLLOWUP_SUGGESTIONS_TABLE}
+            {CREATE_FOLLOWUP_SUGGESTIONS_INDEX}
+            {CREATE_CUSTOMER_SEGMENTS_TABLE}
+            {CREATE_CUSTOMER_SEGMENTS_INDEX}
+            {CREATE_RECOVERY_OPPORTUNITIES_TABLE}
+            {CREATE_RECOVERY_OPPORTUNITIES_INDEX}
             """
             cursor.executescript(schema_script)
             conn.commit()
@@ -399,7 +431,7 @@ def update_order_status(
 def seed_test_order(
     linphone_username: str | None = None, db_path: str | None = None
 ) -> dict[str, Any]:
-    """Seed verified Part 23 test order for Radhika Sharma into database."""
+    """Seed verified test order into database."""
     init_db(db_path)
     username = linphone_username or os.getenv("LINPHONE_USERNAME", "test_user")
     sip_address = (
@@ -408,19 +440,23 @@ def seed_test_order(
         else username
     )
 
-    # First ensure Radhika Sharma exists in customer memory
+    cust_name = "Ramesh" if "ramesh" in username.lower() else "Radhika Sharma"
+    cust_id = "cust_ramesh" if "ramesh" in username.lower() else "cust_radhika"
+    ord_id = "ORD_RAMESH_101" if "ramesh" in username.lower() else "ORD_RADHIKA_101"
+
+    # First ensure customer exists in customer memory
     update_customer(
-        user_id="cust_radhika",
-        name="Radhika Sharma",
+        user_id=cust_id,
+        name=cust_name,
         language_preference="Hindi",
         db_path=db_path,
     )
 
     # Seed verified test order: Basmati Rice x 2 = ₹640 (Status: PENDING)
     return create_order(
-        order_id="ORD_RADHIKA_101",
-        user_id="cust_radhika",
-        customer_name="Radhika Sharma",
+        order_id=ord_id,
+        user_id=cust_id,
+        customer_name=cust_name,
         phone_or_sip=sip_address,
         product_name="Basmati Rice",
         quantity=2.0,
@@ -1417,3 +1453,631 @@ def check_refund_status_db(
         "expected_completion": "2 to 3 business days to original payment method",
         "reference": f"REF-{order['order_id']}-2026",
     }
+
+
+# =============================================================================
+# Agentic Commerce Memory & Database Operations (VyapaarVoice AI)
+# =============================================================================
+
+
+def get_or_create_cart(
+    user_id: str, customer_name: str | None = None, db_path: str | None = None
+) -> dict[str, Any]:
+    """Get active cart for user or create a new one."""
+    init_db(db_path)
+    now_str = datetime.now(timezone.utc).isoformat()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM carts WHERE user_id = ? AND status = 'ACTIVE' ORDER BY created_at DESC LIMIT 1",
+                (user_id,),
+            )
+            row = cursor.fetchone()
+            if row:
+                cart = dict(row)
+                cursor.execute(
+                    "SELECT * FROM cart_items WHERE cart_id = ? ORDER BY id ASC",
+                    (cart["cart_id"],),
+                )
+                cart["items"] = [dict(r) for r in cursor.fetchall()]
+                return cart
+
+            # Create new active cart
+            cart_id = f"CART_{user_id}_{int(datetime.now().timestamp())}"
+            cursor.execute(
+                """
+                INSERT INTO carts (cart_id, user_id, customer_name, subtotal, delivery_fee, discount, total_amount, status, created_at, updated_at)
+                VALUES (?, ?, ?, 0.0, 0.0, 0.0, 0.0, 'ACTIVE', ?, ?)
+                """,
+                (cart_id, user_id, customer_name or "Valued Customer", now_str, now_str),
+            )
+            conn.commit()
+            return {
+                "cart_id": cart_id,
+                "user_id": user_id,
+                "customer_name": customer_name or "Valued Customer",
+                "subtotal": 0.0,
+                "delivery_fee": 0.0,
+                "discount": 0.0,
+                "total_amount": 0.0,
+                "status": "ACTIVE",
+                "items": [],
+                "created_at": now_str,
+                "updated_at": now_str,
+            }
+    except Exception as e:
+        logger.error(f"Error in get_or_create_cart for {user_id}: {e}")
+        return {
+            "cart_id": f"CART_{user_id}",
+            "user_id": user_id,
+            "subtotal": 0.0,
+            "delivery_fee": 0.0,
+            "discount": 0.0,
+            "total_amount": 0.0,
+            "status": "ACTIVE",
+            "items": [],
+        }
+
+
+def recalculate_cart_totals(cart_id: str, db_path: str | None = None) -> dict[str, Any]:
+    """Deterministically recalculate subtotal, delivery, and total for a cart."""
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT SUM(total_price) as subtotal FROM cart_items WHERE cart_id = ?",
+                (cart_id,),
+            )
+            row = cursor.fetchone()
+            subtotal = float(row["subtotal"]) if row and row["subtotal"] is not None else 0.0
+            
+            # Delivery rule: Free delivery above ₹500, else ₹40
+            delivery_fee = 0.0 if (subtotal >= 500.0 or subtotal == 0.0) else 40.0
+            discount = 0.0
+            total_amount = round(subtotal + delivery_fee - discount, 2)
+            now_str = datetime.now(timezone.utc).isoformat()
+
+            cursor.execute(
+                """
+                UPDATE carts 
+                SET subtotal = ?, delivery_fee = ?, discount = ?, total_amount = ?, updated_at = ?
+                WHERE cart_id = ?
+                """,
+                (subtotal, delivery_fee, discount, total_amount, now_str, cart_id),
+            )
+            conn.commit()
+            return {
+                "subtotal": subtotal,
+                "delivery_fee": delivery_fee,
+                "discount": discount,
+                "total_amount": total_amount,
+            }
+    except Exception as e:
+        logger.error(f"Error recalculating cart {cart_id}: {e}")
+        return {"subtotal": 0.0, "delivery_fee": 0.0, "discount": 0.0, "total_amount": 0.0}
+
+
+def add_item_to_cart_db(
+    user_id: str,
+    product_id: str,
+    product_name: str,
+    quantity: float,
+    unit_price: float,
+    category: str | None = None,
+    unit: str | None = None,
+    db_path: str | None = None,
+) -> dict[str, Any]:
+    """Add or update an item in user's active cart with deterministic price calculation."""
+    cart = get_or_create_cart(user_id, db_path=db_path)
+    cart_id = cart["cart_id"]
+    now_str = datetime.now(timezone.utc).isoformat()
+    total_price = round(quantity * unit_price, 2)
+
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM cart_items WHERE cart_id = ? AND product_id = ?",
+                (cart_id, product_id),
+            )
+            existing = cursor.fetchone()
+            if existing:
+                new_qty = existing["quantity"] + quantity
+                new_total = round(new_qty * unit_price, 2)
+                cursor.execute(
+                    "UPDATE cart_items SET quantity = ?, total_price = ? WHERE id = ?",
+                    (new_qty, new_total, existing["id"]),
+                )
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO cart_items (cart_id, product_id, product_name, category, unit, quantity, unit_price, total_price, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        cart_id,
+                        product_id,
+                        product_name,
+                        category or "General",
+                        unit or "unit",
+                        quantity,
+                        unit_price,
+                        total_price,
+                        now_str,
+                    ),
+                )
+            conn.commit()
+
+        totals = recalculate_cart_totals(cart_id, db_path=db_path)
+        log_commerce_event_db(
+            event_type="CART_UPDATED",
+            user_id=user_id,
+            agent_name="Shopping Agent",
+            title=f"Added {quantity} {unit or 'x'} {product_name} to cart",
+            details=f"Item Total: ₹{total_price}, Cart Total: ₹{totals['total_amount']}",
+            db_path=db_path,
+        )
+        return get_or_create_cart(user_id, db_path=db_path)
+    except Exception as e:
+        logger.error(f"Error adding item to cart for {user_id}: {e}")
+        return cart
+
+
+def remove_item_from_cart_db(
+    user_id: str, product_id: str, db_path: str | None = None
+) -> dict[str, Any]:
+    """Remove a product from user's active cart."""
+    cart = get_or_create_cart(user_id, db_path=db_path)
+    cart_id = cart["cart_id"]
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM cart_items WHERE cart_id = ? AND (product_id = ? OR product_name LIKE ?)",
+                (cart_id, product_id, f"%{product_id}%"),
+            )
+            conn.commit()
+        recalculate_cart_totals(cart_id, db_path=db_path)
+        return get_or_create_cart(user_id, db_path=db_path)
+    except Exception as e:
+        logger.error(f"Error removing item from cart: {e}")
+        return cart
+
+
+def clear_cart_db(user_id: str, db_path: str | None = None) -> bool:
+    """Clear all items from user's active cart."""
+    cart = get_or_create_cart(user_id, db_path=db_path)
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM cart_items WHERE cart_id = ?", (cart["cart_id"],))
+            cursor.execute(
+                "UPDATE carts SET subtotal = 0, delivery_fee = 0, discount = 0, total_amount = 0 WHERE cart_id = ?",
+                (cart["cart_id"],),
+            )
+            conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Error clearing cart: {e}")
+        return False
+
+
+def create_payment_intent_db(
+    user_id: str,
+    amount: float,
+    cart_id: str | None = None,
+    order_id: str | None = None,
+    provider: str = "MOCK",
+    payment_method: str = "UPI_QR",
+    db_path: str | None = None,
+) -> dict[str, Any]:
+    """Create a verified payment intent in the database."""
+    init_db(db_path)
+    payment_id = f"PAY_{int(datetime.now().timestamp())}_{user_id[-4:] if len(user_id)>=4 else '0000'}"
+    now_str = datetime.now(timezone.utc).isoformat()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO payment_intents (payment_id, cart_id, order_id, user_id, amount, currency, provider, status, payment_method, transaction_ref, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'INR', ?, 'CREATED', ?, ?, ?, ?)
+                """,
+                (
+                    payment_id,
+                    cart_id,
+                    order_id,
+                    user_id,
+                    amount,
+                    provider,
+                    payment_method,
+                    f"TXN_{payment_id}",
+                    now_str,
+                    now_str,
+                ),
+            )
+            conn.commit()
+
+        log_commerce_event_db(
+            event_type="PAYMENT_INTENT_CREATED",
+            user_id=user_id,
+            agent_name="Checkout Agent",
+            title=f"Payment Intent Created (₹{amount})",
+            details=f"Method: {payment_method}, Ref: TXN_{payment_id}",
+            db_path=db_path,
+        )
+
+        return {
+            "payment_id": payment_id,
+            "user_id": user_id,
+            "amount": amount,
+            "currency": "INR",
+            "provider": provider,
+            "status": "CREATED",
+            "payment_method": payment_method,
+            "transaction_ref": f"TXN_{payment_id}",
+            "created_at": now_str,
+        }
+    except Exception as e:
+        logger.error(f"Error creating payment intent: {e}")
+        return {
+            "payment_id": payment_id,
+            "user_id": user_id,
+            "amount": amount,
+            "status": "FAILED",
+            "error": str(e),
+        }
+
+
+def update_payment_intent_status_db(
+    payment_id: str,
+    status: str,
+    transaction_ref: str | None = None,
+    db_path: str | None = None,
+) -> bool:
+    """Update payment intent status (e.g. PAID, FAILED, CANCELLED)."""
+    now_str = datetime.now(timezone.utc).isoformat()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE payment_intents 
+                SET status = ?, transaction_ref = COALESCE(?, transaction_ref), updated_at = ?
+                WHERE payment_id = ?
+                """,
+                (status, transaction_ref, now_str, payment_id),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+    except Exception as e:
+        logger.error(f"Error updating payment intent {payment_id}: {e}")
+        return False
+
+
+def log_agent_action_db(
+    agent_name: str,
+    action_type: str,
+    tool_name: str | None = None,
+    user_id: str | None = None,
+    input_params: str | None = None,
+    output_result: str | None = None,
+    status: str = "SUCCESS",
+    latency_ms: int = 0,
+    decision_reason: str | None = None,
+    db_path: str | None = None,
+) -> None:
+    """Log an agent action for auditing and activity tracking."""
+    init_db(db_path)
+    action_id = f"ACT_{int(datetime.now().timestamp() * 1000)}"
+    now_str = datetime.now(timezone.utc).isoformat()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO agent_actions (action_id, timestamp, agent_name, action_type, tool_name, user_id, input_params, output_result, status, latency_ms, decision_reason)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    action_id,
+                    now_str,
+                    agent_name,
+                    action_type,
+                    tool_name,
+                    user_id,
+                    input_params,
+                    output_result,
+                    status,
+                    latency_ms,
+                    decision_reason,
+                ),
+            )
+            conn.commit()
+    except Exception as e:
+        logger.debug(f"Could not log agent action: {e}")
+
+
+def log_commerce_event_db(
+    event_type: str,
+    user_id: str | None = None,
+    agent_name: str | None = None,
+    title: str = "",
+    details: str | None = None,
+    db_path: str | None = None,
+) -> None:
+    """Log a high-level commerce event for the real-time timeline."""
+    init_db(db_path)
+    event_id = f"EVT_{int(datetime.now().timestamp() * 1000)}"
+    now_str = datetime.now(timezone.utc).isoformat()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO commerce_events (event_id, event_type, user_id, agent_name, title, details, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (event_id, event_type, user_id, agent_name or "VyapaarVoice AI", title, details, now_str),
+            )
+            conn.commit()
+    except Exception as e:
+        logger.debug(f"Could not log commerce event: {e}")
+
+
+def get_recent_commerce_events_db(
+    limit: int = 15, db_path: str | None = None
+) -> list[dict[str, Any]]:
+    """Retrieve recent commerce events for the activity timeline."""
+    init_db(db_path)
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM commerce_events ORDER BY id DESC LIMIT ?",
+                (limit,),
+            )
+            return [dict(r) for r in cursor.fetchall()]
+    except Exception as e:
+        logger.error(f"Error fetching commerce events: {e}")
+        return []
+
+
+def get_recent_agent_actions_db(
+    limit: int = 20, db_path: str | None = None
+) -> list[dict[str, Any]]:
+    """Retrieve recent agent actions for audit trail."""
+    init_db(db_path)
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM agent_actions ORDER BY id DESC LIMIT ?",
+                (limit,),
+            )
+            return [dict(r) for r in cursor.fetchall()]
+    except Exception as e:
+        logger.error(f"Error fetching agent actions: {e}")
+        return []
+
+
+def create_followup_suggestion_db(
+    customer_id: str,
+    customer_name: str,
+    suggestion_type: str,
+    message: str,
+    target_products: str | None = None,
+    estimated_value: float = 0.0,
+    db_path: str | None = None,
+) -> dict[str, Any]:
+    """Create an AI suggested follow-up (e.g. abandoned cart recovery or repeat order reminder)."""
+    init_db(db_path)
+    suggestion_id = f"SUG_{int(datetime.now().timestamp())}_{customer_id[-4:] if len(customer_id)>=4 else '00'}"
+    now_str = datetime.now(timezone.utc).isoformat()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO followup_suggestions (suggestion_id, customer_id, customer_name, suggestion_type, message, target_products, estimated_value, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING_APPROVAL', ?, ?)
+                """,
+                (
+                    suggestion_id,
+                    customer_id,
+                    customer_name,
+                    suggestion_type,
+                    message,
+                    target_products,
+                    estimated_value,
+                    now_str,
+                    now_str,
+                ),
+            )
+            conn.commit()
+            return {
+                "suggestion_id": suggestion_id,
+                "customer_id": customer_id,
+                "customer_name": customer_name,
+                "suggestion_type": suggestion_type,
+                "message": message,
+                "estimated_value": estimated_value,
+                "status": "PENDING_APPROVAL",
+                "created_at": now_str,
+            }
+    except Exception as e:
+        logger.error(f"Error creating follow-up suggestion: {e}")
+        return {}
+
+
+def update_followup_status_db(
+    suggestion_id: str, status: str, db_path: str | None = None
+) -> bool:
+    """Approve, dismiss, or update status of an AI follow-up suggestion."""
+    now_str = datetime.now(timezone.utc).isoformat()
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE followup_suggestions SET status = ?, updated_at = ? WHERE suggestion_id = ?",
+                (status, now_str, suggestion_id),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+    except Exception as e:
+        logger.error(f"Error updating followup status: {e}")
+        return False
+
+
+def get_followup_suggestions_db(
+    status: str | None = None, db_path: str | None = None
+) -> list[dict[str, Any]]:
+    """Retrieve follow-up suggestions filtered by status."""
+    init_db(db_path)
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            if status:
+                cursor.execute(
+                    "SELECT * FROM followup_suggestions WHERE status = ? ORDER BY id DESC",
+                    (status,),
+                )
+            else:
+                cursor.execute("SELECT * FROM followup_suggestions ORDER BY id DESC")
+            return [dict(r) for r in cursor.fetchall()]
+    except Exception as e:
+        logger.error(f"Error getting followups: {e}")
+        return []
+
+
+def get_customer_segments_db(db_path: str | None = None) -> list[dict[str, Any]]:
+    """Calculate deterministic customer segmentation from real database order history."""
+    init_db(db_path)
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT c.user_id, c.name, COUNT(o.order_id) as order_count, SUM(o.estimated_total) as total_spent
+                FROM customers c
+                LEFT JOIN orders o ON c.user_id = o.user_id AND o.status = 'CONFIRMED'
+                GROUP BY c.user_id, c.name
+                """
+            )
+            rows = cursor.fetchall()
+            segments = []
+            now_str = datetime.now(timezone.utc).isoformat()
+            for r in rows:
+                user_id = r["user_id"]
+                name = r["name"] or "Customer"
+                count = r["order_count"] or 0
+                spent = float(r["total_spent"] or 0.0)
+
+                if count >= 3 or spent >= 1500.0:
+                    seg = "LOYAL"
+                    reason = f"Completed {count} orders with ₹{spent:.0f} total spend"
+                elif count >= 1:
+                    seg = "RETURNING"
+                    reason = f"Completed {count} verified purchase"
+                else:
+                    seg = "NEW"
+                    reason = "Registered customer with 0 completed orders"
+
+                segments.append({
+                    "user_id": user_id,
+                    "customer_name": name,
+                    "segment_name": seg,
+                    "orders_count": count,
+                    "total_spent": spent,
+                    "reason": reason,
+                    "updated_at": now_str,
+                })
+            return segments
+    except Exception as e:
+        logger.error(f"Error calculating customer segments: {e}")
+        return []
+
+
+def get_recovery_opportunities_db(db_path: str | None = None) -> list[dict[str, Any]]:
+    """Retrieve recovery opportunities from carts created without completed checkout."""
+    init_db(db_path)
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT c.*, COUNT(ci.id) as item_count 
+                FROM carts c
+                JOIN cart_items ci ON c.cart_id = ci.cart_id
+                WHERE c.status = 'ACTIVE' AND c.total_amount > 0
+                GROUP BY c.cart_id
+                ORDER BY c.total_amount DESC
+                """
+            )
+            rows = cursor.fetchall()
+            opps = []
+            now_str = datetime.now(timezone.utc).isoformat()
+            for r in rows:
+                amt = float(r["total_amount"])
+                priority = "HIGH" if amt >= 1000.0 else "MEDIUM" if amt >= 400.0 else "LOW"
+                opps.append({
+                    "opportunity_id": f"OPP_{r['cart_id']}",
+                    "cart_id": r["cart_id"],
+                    "user_id": r["user_id"],
+                    "customer_name": r["customer_name"] or "Customer",
+                    "amount": amt,
+                    "priority": priority,
+                    "recommended_action": f"Send personalized Hinglish WhatsApp/SMS reminder for {r['item_count']} items (₹{amt})",
+                    "status": "OPEN",
+                    "created_at": now_str,
+                })
+            return opps
+    except Exception as e:
+        logger.error(f"Error fetching recovery opportunities: {e}")
+        return []
+
+
+def get_merchant_sales_summary_db(db_path: str | None = None) -> dict[str, Any]:
+    """Retrieve deterministic sales and revenue summary for Merchant Copilot."""
+    init_db(db_path)
+    try:
+        with get_connection(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT COUNT(*) as total_orders, SUM(estimated_total) as total_revenue FROM orders WHERE status = 'CONFIRMED'"
+            )
+            row = cursor.fetchone()
+            total_orders = row["total_orders"] if row else 0
+            total_revenue = float(row["total_revenue"] or 0.0) if row else 0.0
+
+            cursor.execute(
+                "SELECT COUNT(*) as active_carts, SUM(total_amount) as abandoned_value FROM carts WHERE status = 'ACTIVE' AND total_amount > 0"
+            )
+            cart_row = cursor.fetchone()
+            active_carts = cart_row["active_carts"] if cart_row else 0
+            abandoned_val = float(cart_row["abandoned_value"] or 0.0) if cart_row else 0.0
+
+            cursor.execute("SELECT COUNT(*) as total_calls FROM calls")
+            calls_row = cursor.fetchone()
+            total_calls = calls_row["total_calls"] if calls_row else 0
+
+            return {
+                "total_orders": total_orders,
+                "total_revenue": total_revenue,
+                "active_carts": active_carts,
+                "abandoned_cart_value": abandoned_val,
+                "total_voice_calls": total_calls,
+                "average_order_value": round(total_revenue / total_orders, 2) if total_orders > 0 else 0.0,
+            }
+    except Exception as e:
+        logger.error(f"Error generating sales summary: {e}")
+        return {
+            "total_orders": 0,
+            "total_revenue": 0.0,
+            "active_carts": 0,
+            "abandoned_cart_value": 0.0,
+            "total_voice_calls": 0,
+            "average_order_value": 0.0,
+        }
+

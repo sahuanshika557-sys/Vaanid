@@ -130,6 +130,19 @@ def lookup_product_data(query: str) -> dict[str, Any]:
             "data_source": DATA_SOURCE_NAME,
         }
 
+    # Handle broad queries like 'catalogue', 'all', 'groceries', 'products'
+    if clean_query in ("all", "catalogue", "catalog", "groceries", "grocery", "products", "items", "samaan", "list"):
+        sample_items = [f"{p['product_name']} (₹{p['price']}/{p['unit']})" for p in products[:6]]
+        return {
+            "found": True,
+            "success": True,
+            "product_name": "Full Product Catalogue",
+            "available_items": sample_items,
+            "total_items": len(products),
+            "message": f"Hamare paas {len(products)} products available hain, jaise: " + ", ".join(sample_items) + " aur bhi bahut kuch.",
+            "data_source": DATA_SOURCE_NAME,
+        }
+
     # 1. Exact match by product_id
     id_matches = [p for p in products if p["product_id"].lower() == clean_query]
     if len(id_matches) == 1:
