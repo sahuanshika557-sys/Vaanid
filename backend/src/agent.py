@@ -961,7 +961,15 @@ class HealthHandler(BaseHTTPRequestHandler):
         return
 
 
+_health_server_started = False
+
+
 def start_health_server():
+    global _health_server_started
+    if _health_server_started:
+        return
+    _health_server_started = True
+
     port = int(os.getenv("PORT", "10000"))
     try:
         httpd = HTTPServer(("0.0.0.0", port), HealthHandler)
@@ -972,6 +980,8 @@ def start_health_server():
         logger.warning(f"Could not start health check server on port {port}: {e}")
 
 
+# Start health check server on module load so Render port is always detected
+start_health_server()
+
 if __name__ == "__main__":
-    start_health_server()
     cli.run_app(server)
