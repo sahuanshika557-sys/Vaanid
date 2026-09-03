@@ -33,7 +33,7 @@ export function useAgentErrors() {
       return;
     }
 
-    // Give 15-second grace period for Windows process/WebRTC initialization
+    // Give 35-second grace period for cloud container / WebRTC initialization
     const timer = setTimeout(() => {
       if (agent.state === 'failed') {
         const reasons = agent.failureReasons;

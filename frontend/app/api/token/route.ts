@@ -18,8 +18,13 @@ const AGENT_NAME = process.env.AGENT_NAME;
 // Don't cache token route results
 export const revalidate = 0;
 
+const BACKEND_URL = process.env.BACKEND_URL || 'https://vaanid.onrender.com';
+
 export async function POST(req: Request) {
   try {
+    // Non-blocking wake-up trigger for Render cloud worker
+    fetch(BACKEND_URL).catch(() => {});
+
     if (!LIVEKIT_URL) {
       return NextResponse.json(
         { error: 'LIVEKIT_URL environment variable is missing' },
