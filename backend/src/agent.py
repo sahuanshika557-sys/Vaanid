@@ -6,6 +6,14 @@ import sys
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+# Low-memory constraints for 512MB cloud environments (Render, etc.)
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -830,7 +838,8 @@ def zero_load(*args, **kwargs) -> float:
     return 0.0
 
 
-server = AgentServer(port=0, load_threshold=10.0, load_fnc=zero_load, num_idle_processes=1)
+num_idle = 0 if (os.getenv("RENDER") or os.getenv("PORT")) else 1
+server = AgentServer(port=0, load_threshold=10.0, load_fnc=zero_load, num_idle_processes=num_idle)
 
 
 def prewarm(proc: JobProcess):
