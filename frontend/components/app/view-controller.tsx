@@ -134,12 +134,20 @@ export function ViewController({ appConfig }: ViewControllerProps) {
   const handleStartCall = async () => {
     setMicError(null);
     setHasEnded(false);
+    wasConnectedRef.current = false;
 
     console.log(
       '[VOICE_PIPELINE] MICROPHONE_PERMISSION: Requesting mic permissions & starting session...'
     );
 
     try {
+      if (room && room.state !== ConnectionState.Disconnected) {
+        try {
+          await room.disconnect();
+        } catch (discErr) {
+          console.warn('Room disconnect warning before restart:', discErr);
+        }
+      }
       await start({
         tracks: {
           microphone: {
@@ -171,9 +179,16 @@ export function ViewController({ appConfig }: ViewControllerProps) {
     }
   };
 
-  const handleRestart = () => {
+  const handleRestart = async () => {
     wasConnectedRef.current = false;
-    handleStartCall();
+    setHasEnded(false);
+    setMicError(null);
+    try {
+      if (session.end) {
+        session.end();
+      }
+    } catch (e) {}
+    await handleStartCall();
   };
 
   return (

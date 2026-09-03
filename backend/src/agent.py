@@ -929,6 +929,13 @@ async def my_agent(ctx: JobContext):
 
         greeting = f"Welcome back, {name}! How can I help you today?"
 
+    logger.info(f"[VOICE_PIPELINE] Speaking welcome greeting: '{greeting}'")
+    await session.say(
+        greeting,
+        allow_interruptions=True,
+    )
+
+
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
