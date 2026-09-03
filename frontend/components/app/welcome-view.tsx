@@ -777,6 +777,11 @@ export const WelcomeView = ({
                     <img
                       src={item.image}
                       alt={item.name}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src =
+                          'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
+                      }}
                       className="size-full object-cover transition-transform duration-700 group-hover:scale-108"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
