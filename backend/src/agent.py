@@ -29,6 +29,7 @@ from livekit.agents import (
     AgentServer,
     AgentSession,
     JobContext,
+    JobExecutorType,
     JobProcess,
     RunContext,
     cli,
@@ -834,13 +835,19 @@ def zero_load(*args, **kwargs) -> float:
     return 0.0
 
 
-num_idle = 1
+# Cloud memory optimization for Render (512MB limit):
+# 1. JobExecutorType.THREAD: all jobs run inside a single Python process sharing memory.
+# 2. num_idle_processes=0: never spawns duplicate PyTorch/VAD subprocesses.
+# 3. Keeps total RAM consumption under ~180MB.
 server = AgentServer(
     port=0,
+    job_executor_type=JobExecutorType.THREAD,
     load_threshold=10.0,
     load_fnc=zero_load,
-    num_idle_processes=num_idle,
+    num_idle_processes=0,
     shutdown_process_timeout=3.0,
+    job_memory_warn_mb=350,
+    job_memory_limit_mb=450,
 )
 
 
