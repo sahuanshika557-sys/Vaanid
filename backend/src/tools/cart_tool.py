@@ -24,7 +24,7 @@ def manage_cart_data(
     user_id: str = "cust_default",
 ) -> dict[str, Any]:
     """Autonomous tool to manipulate customer shopping cart deterministically.
-    
+
     Actions:
     - 'add': Add product to cart by verifying price & stock in catalogue
     - 'remove': Remove product from cart
@@ -33,7 +33,7 @@ def manage_cart_data(
     - 'checkout': Create payment intent for cart total
     """
     action_clean = action.strip().lower()
-    
+
     if action_clean == "view":
         cart = get_or_create_cart(user_id)
         return {
@@ -61,14 +61,20 @@ def manage_cart_data(
 
     if action_clean == "add":
         if not product_name:
-            return {"success": False, "message": "Please specify a product name to add."}
+            return {
+                "success": False,
+                "message": "Please specify a product name to add.",
+            }
 
         # Lookup in verified catalogue
         lookup = lookup_product_data(product_name)
         if not lookup.get("found"):
             return {
                 "success": False,
-                "message": lookup.get("message", f"Sorry, '{product_name}' was not found in our store catalogue."),
+                "message": lookup.get(
+                    "message",
+                    f"Sorry, '{product_name}' was not found in our store catalogue.",
+                ),
             }
 
         p_name = lookup["product_name"]
@@ -78,13 +84,13 @@ def manage_cart_data(
         unit = lookup.get("unit", "pack")
         category = lookup.get("category", "General")
         qty = max(1.0, float(quantity))
-        
+
         if stock <= 0:
             return {
                 "success": False,
                 "message": f"Sorry, {p_name} is currently out of stock.",
             }
-        
+
         if qty > stock:
             qty = float(stock)
 
@@ -121,8 +127,11 @@ def manage_cart_data(
 
     if action_clean == "remove":
         if not product_name:
-            return {"success": False, "message": "Please specify product name to remove."}
-        
+            return {
+                "success": False,
+                "message": "Please specify product name to remove.",
+            }
+
         updated_cart = remove_item_from_cart_db(user_id, product_name)
         return {
             "success": True,
@@ -135,7 +144,10 @@ def manage_cart_data(
     if action_clean == "checkout":
         cart = get_or_create_cart(user_id)
         if not cart.get("items"):
-            return {"success": False, "message": "Your cart is empty. Add products before checkout."}
+            return {
+                "success": False,
+                "message": "Your cart is empty. Add products before checkout.",
+            }
 
         total = cart["total_amount"]
         payment_intent = create_payment_intent_db(

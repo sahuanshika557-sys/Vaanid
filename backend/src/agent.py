@@ -28,7 +28,6 @@ from livekit.agents import (
     Agent,
     AgentServer,
     AgentSession,
-    AutoSubscribe,
     JobContext,
     JobProcess,
     RunContext,
@@ -38,7 +37,6 @@ from livekit.agents import (
     tokenize,
 )
 from livekit.plugins import deepgram, google, murf, noise_cancellation, silero
-from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from database.memory import (
     create_call_record,
@@ -660,9 +658,7 @@ class Assistant(Agent):
     # AGENTIC COMMERCE TOOL 12: MERCHANT COPILOT (TRACK 1)
     # =========================================================================
     @function_tool
-    async def merchant_copilot_query(
-        self, context: RunContext, query: str
-    ) -> dict:
+    async def merchant_copilot_query(self, context: RunContext, query: str) -> dict:
         """Answer merchant business analytics questions (revenue, low stock, abandoned carts, top sellers).
 
         WHEN TO CALL: When a merchant asks business intelligence questions.
@@ -839,7 +835,9 @@ def zero_load(*args, **kwargs) -> float:
 
 
 num_idle = 1
-server = AgentServer(port=0, load_threshold=10.0, load_fnc=zero_load, num_idle_processes=num_idle)
+server = AgentServer(
+    port=0, load_threshold=10.0, load_fnc=zero_load, num_idle_processes=num_idle
+)
 
 
 def prewarm(proc: JobProcess):
@@ -905,11 +903,13 @@ async def my_agent(ctx: JobContext):
     is_cloud = bool(os.getenv("RENDER") or os.getenv("PORT"))
     noise_canceller = None
     if not is_cloud:
-        noise_canceller = lambda params: (
-            noise_cancellation.BVCTelephony()
-            if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP
-            else noise_cancellation.BVC()
-        )
+
+        def noise_canceller(params):
+            return (
+                noise_cancellation.BVCTelephony()
+                if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP
+                else noise_cancellation.BVC()
+            )
 
     # Start session atomically (joins room + publishes audio track simultaneously)
     await session.start(
@@ -925,22 +925,30 @@ async def my_agent(ctx: JobContext):
         f"[VOICE_PIPELINE] AGENT_CONNECTED & STT_STARTED: Multi-Agent session initialized in room '{ctx.room.name}'."
     )
 
-    cust = get_customer(user_id) or get_customer("cust_radhika") or get_customer("cust_default")
-
-    greeting = (
-        "Welcome back, Radhika Sharma! I'm Anisha, your local shopping assistant. How can I help you today?"
+    cust = (
+        get_customer(user_id)
+        or get_customer("cust_radhika")
+        or get_customer("cust_default")
     )
+
+    greeting = "Welcome back, Radhika Sharma! I'm Anisha, your local shopping assistant. How can I help you today?"
 
     if cust and cust.get("name"):
         name = cust["name"]
-        past = cust.get("past_orders") or "ORD_RADHIKA_101: 2 packs of Basmati Rice (5kg) for ₹640 (Confirmed)"
+        past = (
+            cust.get("past_orders")
+            or "ORD_RADHIKA_101: 2 packs of Basmati Rice (5kg) for ₹640 (Confirmed)"
+        )
         assistant.handoff_ctx.name = name
         assistant.handoff_ctx.order_id = "ORD_RADHIKA_101"
-        lang = (cust.get("language_preference") or "").lower()
+        (cust.get("language_preference") or "").lower()
         update_last_interaction(user_id)
 
         # Inject customer memory into agent instructions
-        dynamic_prompt = MAIN_COMMERCE_SYSTEM_PROMPT + f"\n\nCURRENT CUSTOMER MEMORY:\n- Name: {name}\n- Customer ID: {user_id}\n- Past Orders: {past}\n- Preference: {cust.get('preferred_delivery_slot', 'Morning 10 AM')}\n"
+        dynamic_prompt = (
+            MAIN_COMMERCE_SYSTEM_PROMPT
+            + f"\n\nCURRENT CUSTOMER MEMORY:\n- Name: {name}\n- Customer ID: {user_id}\n- Past Orders: {past}\n- Preference: {cust.get('preferred_delivery_slot', 'Morning 10 AM')}\n"
+        )
         await assistant.update_instructions(dynamic_prompt)
 
         greeting = f"Welcome back, {name}! How can I help you today?"
@@ -964,7 +972,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "application/json")
         self.end_headers()
 
-    def log_message(self, format, *args):
+    def log_message(self, format_str, *args):
         return
 
 
@@ -992,6 +1000,8 @@ start_health_server()
 
 if __name__ == "__main__":
     if (os.getenv("RENDER") or os.getenv("PORT")) and "dev" in sys.argv:
-        print("[VAANID_CLOUD] Auto-converting 'dev' to 'start' mode on Render to avoid watchdog memory overhead.")
+        print(
+            "[VAANID_CLOUD] Auto-converting 'dev' to 'start' mode on Render to avoid watchdog memory overhead."
+        )
         sys.argv[sys.argv.index("dev")] = "start"
     cli.run_app(server)

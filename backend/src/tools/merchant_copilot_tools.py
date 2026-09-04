@@ -66,25 +66,35 @@ def get_customer_segments() -> list[dict[str, Any]]:
 
 def query_merchant_copilot(query: str) -> dict[str, Any]:
     """Autonomous Copilot answer engine for merchant voice & text business queries.
-    
+
     Answers in natural Hinglish/English backed by 100% real database numbers.
     """
     q_clean = query.lower()
     sales = get_sales_summary()
     low_stock = get_low_stock_products()
     abandoned = get_abandoned_carts()
-    
+
     # 1. Low stock / restock question
-    if any(w in q_clean for w in ["low stock", "stock", "khatam", "bacha", "restock", "inventory"]):
+    if any(
+        w in q_clean
+        for w in ["low stock", "stock", "khatam", "bacha", "restock", "inventory"]
+    ):
         if low_stock:
-            items_str = ", ".join([f"{item['name']} ({item['stock']} left)" for item in low_stock[:4]])
+            items_str = ", ".join(
+                [f"{item['name']} ({item['stock']} left)" for item in low_stock[:4]]
+            )
             answer = f"Dukan mein {len(low_stock)} products low stock par hain: {items_str}. Inka restock order initiate karna recommended hai."
         else:
-            answer = "Sabhi products ka stock healthy hai. Koi bhi item low stock nahi hai."
+            answer = (
+                "Sabhi products ka stock healthy hai. Koi bhi item low stock nahi hai."
+            )
         data = low_stock
 
     # 2. Revenue / Sales question
-    elif any(w in q_clean for w in ["revenue", "sales", "kamai", "biki", "aaj kitna", "orders", "total"]):
+    elif any(
+        w in q_clean
+        for w in ["revenue", "sales", "kamai", "biki", "aaj kitna", "orders", "total"]
+    ):
         answer = (
             f"Abhi tak total {sales['total_orders']} confirmed orders aaye hain jisse ₹{sales['total_revenue']:.0f} ka revenue generate hua hai. "
             f"Average order value ₹{sales['average_order_value']:.0f} hai."
@@ -92,7 +102,9 @@ def query_merchant_copilot(query: str) -> dict[str, Any]:
         data = sales
 
     # 3. Abandoned carts / recovery question
-    elif any(w in q_clean for w in ["abandoned", "recovery", "choda", "pending", "recover"]):
+    elif any(
+        w in q_clean for w in ["abandoned", "recovery", "choda", "pending", "recover"]
+    ):
         total_recovery = sum(item["amount"] for item in abandoned)
         if abandoned:
             answer = (

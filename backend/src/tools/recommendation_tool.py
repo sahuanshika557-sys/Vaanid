@@ -16,7 +16,7 @@ def recommend_products_data(
     user_id: str | None = None,
 ) -> dict[str, Any]:
     """Recommend in-stock catalogue items based on budget, category, and preferences.
-    
+
     All recommendations are derived from verified inventory data, never hallucinated.
     """
     catalogue = load_catalogue()
@@ -49,40 +49,46 @@ def recommend_products_data(
             if running_total + price <= budget or not recommendations:
                 reason = []
                 if price <= budget:
-                    reason.append(f"Fits within your ₹{budget:.0f} budget (Price: ₹{price:.0f})")
+                    reason.append(
+                        f"Fits within your ₹{budget:.0f} budget (Price: ₹{price:.0f})"
+                    )
                 stock = p.get("stock_quantity", 0)
                 if stock >= 10:
                     reason.append("High stock available for same-day delivery")
                 elif stock > 0:
                     reason.append(f"Only {stock} units left in stock")
-                
-                recommendations.append({
-                    "product_id": p.get("product_id"),
-                    "name": p.get("product_name"),
-                    "category": p.get("category"),
-                    "price": price,
-                    "unit": p.get("unit"),
-                    "stock": stock,
-                    "reason": " • ".join(reason),
-                })
+
+                recommendations.append(
+                    {
+                        "product_id": p.get("product_id"),
+                        "name": p.get("product_name"),
+                        "category": p.get("category"),
+                        "price": price,
+                        "unit": p.get("unit"),
+                        "stock": stock,
+                        "reason": " • ".join(reason),
+                    }
+                )
                 running_total += price
                 if len(recommendations) >= 4:
                     break
     else:
         # General top recommendations
         for p in available[:4]:
-            recommendations.append({
-                "product_id": p.get("product_id"),
-                "name": p.get("product_name"),
-                "category": p.get("category"),
-                "price": float(p.get("price", 0)),
-                "unit": p.get("unit"),
-                "stock": p.get("stock_quantity", 0),
-                "reason": f"Popular in {p.get('category', 'Store')} • In stock ({p.get('stock_quantity', 0)} available)",
-            })
+            recommendations.append(
+                {
+                    "product_id": p.get("product_id"),
+                    "name": p.get("product_name"),
+                    "category": p.get("category"),
+                    "price": float(p.get("price", 0)),
+                    "unit": p.get("unit"),
+                    "stock": p.get("stock_quantity", 0),
+                    "reason": f"Popular in {p.get('category', 'Store')} • In stock ({p.get('stock_quantity', 0)} available)",
+                }
+            )
 
     total_est = sum(r["price"] for r in recommendations)
-    
+
     # Log agent decision
     log_agent_action_db(
         agent_name="Discovery & Recommendation Agent",

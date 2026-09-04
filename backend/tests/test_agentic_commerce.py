@@ -1,6 +1,5 @@
 """Unit tests for Agentic Commerce tools (VyapaarVoice AI)."""
 
-import pytest
 from services.payment_service import MockPaymentProvider
 from tools.cart_tool import manage_cart_data
 from tools.merchant_copilot_tools import (
@@ -29,7 +28,7 @@ def test_recommendation_tool_with_category():
 def test_cart_management():
     # 1. Clear cart
     manage_cart_data(action="clear", user_id="test_user_pytest")
-    
+
     # 2. Add product
     add_res = manage_cart_data(
         action="add",

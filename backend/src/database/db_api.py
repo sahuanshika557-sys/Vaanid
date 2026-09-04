@@ -31,10 +31,13 @@ from database.memory import (  # noqa: E402
     update_escalation_status,
     update_followup_status_db,
 )
-from services.payment_service import get_payment_provider
-from tools.cart_tool import manage_cart_data
-from tools.merchant_copilot_tools import get_sales_summary, query_merchant_copilot
-from tools.recommendation_tool import recommend_products_data
+from services.payment_service import get_payment_provider  # noqa: E402
+from tools.cart_tool import manage_cart_data  # noqa: E402
+from tools.merchant_copilot_tools import (  # noqa: E402
+    get_sales_summary,
+    query_merchant_copilot,
+)
+from tools.recommendation_tool import recommend_products_data  # noqa: E402
 
 
 def main():
@@ -208,7 +211,11 @@ def main():
         elif cmd == "get_recommendations":
             payload_json = sys.argv[2] if len(sys.argv) > 2 else "{}"
             payload = json.loads(payload_json)
-            budget = float(payload["budget"]) if "budget" in payload and payload["budget"] is not None else None
+            budget = (
+                float(payload["budget"])
+                if "budget" in payload and payload["budget"] is not None
+                else None
+            )
             res = recommend_products_data(
                 query=payload.get("query"),
                 budget=budget,
@@ -223,22 +230,36 @@ def main():
             print(json.dumps(res))
 
         elif cmd == "get_commerce_events":
-            limit = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 20
+            limit = (
+                int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 20
+            )
             events = get_recent_commerce_events_db(limit=limit)
             actions = get_recent_agent_actions_db(limit=limit)
             print(json.dumps({"success": True, "events": events, "actions": actions}))
 
         elif cmd == "get_followups":
-            status = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] != "null" else None
+            status = (
+                sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] != "null" else None
+            )
             followups = get_followup_suggestions_db(status=status)
             recovery_opps = get_recovery_opportunities_db()
-            print(json.dumps({"success": True, "followups": followups, "recovery_opportunities": recovery_opps}))
+            print(
+                json.dumps(
+                    {
+                        "success": True,
+                        "followups": followups,
+                        "recovery_opportunities": recovery_opps,
+                    }
+                )
+            )
 
         elif cmd == "update_followup":
             sug_id = sys.argv[2] if len(sys.argv) > 2 else ""
             status = sys.argv[3] if len(sys.argv) > 3 else "APPROVED"
             res = update_followup_status_db(sug_id, status)
-            print(json.dumps({"success": res, "suggestion_id": sug_id, "status": status}))
+            print(
+                json.dumps({"success": res, "suggestion_id": sug_id, "status": status})
+            )
 
         elif cmd == "get_customer_segments":
             segments = get_customer_segments_db()

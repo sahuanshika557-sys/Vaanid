@@ -127,7 +127,16 @@ def init_db(db_path: str | None = None) -> str:
                 ('12345', 'cust_radhika', 'Radhika Sharma', 'browser', 'Basmati Rice (5kg)', 1.0, 320.0, 'CONFIRMED', ?, ?),
                 ('98765', 'cust_radhika', 'Radhika Sharma', 'browser', 'Sunflower Oil (1L)', 2.0, 310.0, 'CONFIRMED', ?, ?)
                 """,
-                (now_str, now_str, now_str, now_str, now_str, now_str, now_str, now_str),
+                (
+                    now_str,
+                    now_str,
+                    now_str,
+                    now_str,
+                    now_str,
+                    now_str,
+                    now_str,
+                    now_str,
+                ),
             )
             conn.commit()
 
@@ -1490,7 +1499,13 @@ def get_or_create_cart(
                 INSERT INTO carts (cart_id, user_id, customer_name, subtotal, delivery_fee, discount, total_amount, status, created_at, updated_at)
                 VALUES (?, ?, ?, 0.0, 0.0, 0.0, 0.0, 'ACTIVE', ?, ?)
                 """,
-                (cart_id, user_id, customer_name or "Valued Customer", now_str, now_str),
+                (
+                    cart_id,
+                    user_id,
+                    customer_name or "Valued Customer",
+                    now_str,
+                    now_str,
+                ),
             )
             conn.commit()
             return {
@@ -1530,8 +1545,10 @@ def recalculate_cart_totals(cart_id: str, db_path: str | None = None) -> dict[st
                 (cart_id,),
             )
             row = cursor.fetchone()
-            subtotal = float(row["subtotal"]) if row and row["subtotal"] is not None else 0.0
-            
+            subtotal = (
+                float(row["subtotal"]) if row and row["subtotal"] is not None else 0.0
+            )
+
             # Delivery rule: Free delivery above ₹500, else ₹40
             delivery_fee = 0.0 if (subtotal >= 500.0 or subtotal == 0.0) else 40.0
             discount = 0.0
@@ -1540,7 +1557,7 @@ def recalculate_cart_totals(cart_id: str, db_path: str | None = None) -> dict[st
 
             cursor.execute(
                 """
-                UPDATE carts 
+                UPDATE carts
                 SET subtotal = ?, delivery_fee = ?, discount = ?, total_amount = ?, updated_at = ?
                 WHERE cart_id = ?
                 """,
@@ -1555,7 +1572,12 @@ def recalculate_cart_totals(cart_id: str, db_path: str | None = None) -> dict[st
             }
     except Exception as e:
         logger.error(f"Error recalculating cart {cart_id}: {e}")
-        return {"subtotal": 0.0, "delivery_fee": 0.0, "discount": 0.0, "total_amount": 0.0}
+        return {
+            "subtotal": 0.0,
+            "delivery_fee": 0.0,
+            "discount": 0.0,
+            "total_amount": 0.0,
+        }
 
 
 def add_item_to_cart_db(
@@ -1651,7 +1673,9 @@ def clear_cart_db(user_id: str, db_path: str | None = None) -> bool:
     try:
         with get_connection(db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM cart_items WHERE cart_id = ?", (cart["cart_id"],))
+            cursor.execute(
+                "DELETE FROM cart_items WHERE cart_id = ?", (cart["cart_id"],)
+            )
             cursor.execute(
                 "UPDATE carts SET subtotal = 0, delivery_fee = 0, discount = 0, total_amount = 0 WHERE cart_id = ?",
                 (cart["cart_id"],),
@@ -1674,7 +1698,7 @@ def create_payment_intent_db(
 ) -> dict[str, Any]:
     """Create a verified payment intent in the database."""
     init_db(db_path)
-    payment_id = f"PAY_{int(datetime.now().timestamp())}_{user_id[-4:] if len(user_id)>=4 else '0000'}"
+    payment_id = f"PAY_{int(datetime.now().timestamp())}_{user_id[-4:] if len(user_id) >= 4 else '0000'}"
     now_str = datetime.now(timezone.utc).isoformat()
     try:
         with get_connection(db_path) as conn:
@@ -1743,7 +1767,7 @@ def update_payment_intent_status_db(
             cursor = conn.cursor()
             cursor.execute(
                 """
-                UPDATE payment_intents 
+                UPDATE payment_intents
                 SET status = ?, transaction_ref = COALESCE(?, transaction_ref), updated_at = ?
                 WHERE payment_id = ?
                 """,
@@ -1819,7 +1843,15 @@ def log_commerce_event_db(
                 INSERT INTO commerce_events (event_id, event_type, user_id, agent_name, title, details, timestamp)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (event_id, event_type, user_id, agent_name or "VyapaarVoice AI", title, details, now_str),
+                (
+                    event_id,
+                    event_type,
+                    user_id,
+                    agent_name or "VyapaarVoice AI",
+                    title,
+                    details,
+                    now_str,
+                ),
             )
             conn.commit()
     except Exception as e:
@@ -1873,7 +1905,7 @@ def create_followup_suggestion_db(
 ) -> dict[str, Any]:
     """Create an AI suggested follow-up (e.g. abandoned cart recovery or repeat order reminder)."""
     init_db(db_path)
-    suggestion_id = f"SUG_{int(datetime.now().timestamp())}_{customer_id[-4:] if len(customer_id)>=4 else '00'}"
+    suggestion_id = f"SUG_{int(datetime.now().timestamp())}_{customer_id[-4:] if len(customer_id) >= 4 else '00'}"
     now_str = datetime.now(timezone.utc).isoformat()
     try:
         with get_connection(db_path) as conn:
@@ -1984,15 +2016,17 @@ def get_customer_segments_db(db_path: str | None = None) -> list[dict[str, Any]]
                     seg = "NEW"
                     reason = "Registered customer with 0 completed orders"
 
-                segments.append({
-                    "user_id": user_id,
-                    "customer_name": name,
-                    "segment_name": seg,
-                    "orders_count": count,
-                    "total_spent": spent,
-                    "reason": reason,
-                    "updated_at": now_str,
-                })
+                segments.append(
+                    {
+                        "user_id": user_id,
+                        "customer_name": name,
+                        "segment_name": seg,
+                        "orders_count": count,
+                        "total_spent": spent,
+                        "reason": reason,
+                        "updated_at": now_str,
+                    }
+                )
             return segments
     except Exception as e:
         logger.error(f"Error calculating customer segments: {e}")
@@ -2007,7 +2041,7 @@ def get_recovery_opportunities_db(db_path: str | None = None) -> list[dict[str, 
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT c.*, COUNT(ci.id) as item_count 
+                SELECT c.*, COUNT(ci.id) as item_count
                 FROM carts c
                 JOIN cart_items ci ON c.cart_id = ci.cart_id
                 WHERE c.status = 'ACTIVE' AND c.total_amount > 0
@@ -2020,18 +2054,22 @@ def get_recovery_opportunities_db(db_path: str | None = None) -> list[dict[str, 
             now_str = datetime.now(timezone.utc).isoformat()
             for r in rows:
                 amt = float(r["total_amount"])
-                priority = "HIGH" if amt >= 1000.0 else "MEDIUM" if amt >= 400.0 else "LOW"
-                opps.append({
-                    "opportunity_id": f"OPP_{r['cart_id']}",
-                    "cart_id": r["cart_id"],
-                    "user_id": r["user_id"],
-                    "customer_name": r["customer_name"] or "Customer",
-                    "amount": amt,
-                    "priority": priority,
-                    "recommended_action": f"Send personalized Hinglish WhatsApp/SMS reminder for {r['item_count']} items (₹{amt})",
-                    "status": "OPEN",
-                    "created_at": now_str,
-                })
+                priority = (
+                    "HIGH" if amt >= 1000.0 else "MEDIUM" if amt >= 400.0 else "LOW"
+                )
+                opps.append(
+                    {
+                        "opportunity_id": f"OPP_{r['cart_id']}",
+                        "cart_id": r["cart_id"],
+                        "user_id": r["user_id"],
+                        "customer_name": r["customer_name"] or "Customer",
+                        "amount": amt,
+                        "priority": priority,
+                        "recommended_action": f"Send personalized Hinglish WhatsApp/SMS reminder for {r['item_count']} items (₹{amt})",
+                        "status": "OPEN",
+                        "created_at": now_str,
+                    }
+                )
             return opps
     except Exception as e:
         logger.error(f"Error fetching recovery opportunities: {e}")
@@ -2056,7 +2094,9 @@ def get_merchant_sales_summary_db(db_path: str | None = None) -> dict[str, Any]:
             )
             cart_row = cursor.fetchone()
             active_carts = cart_row["active_carts"] if cart_row else 0
-            abandoned_val = float(cart_row["abandoned_value"] or 0.0) if cart_row else 0.0
+            abandoned_val = (
+                float(cart_row["abandoned_value"] or 0.0) if cart_row else 0.0
+            )
 
             cursor.execute("SELECT COUNT(*) as total_calls FROM calls")
             calls_row = cursor.fetchone()
@@ -2068,7 +2108,9 @@ def get_merchant_sales_summary_db(db_path: str | None = None) -> dict[str, Any]:
                 "active_carts": active_carts,
                 "abandoned_cart_value": abandoned_val,
                 "total_voice_calls": total_calls,
-                "average_order_value": round(total_revenue / total_orders, 2) if total_orders > 0 else 0.0,
+                "average_order_value": round(total_revenue / total_orders, 2)
+                if total_orders > 0
+                else 0.0,
             }
     except Exception as e:
         logger.error(f"Error generating sales summary: {e}")
@@ -2080,4 +2122,3 @@ def get_merchant_sales_summary_db(db_path: str | None = None) -> dict[str, Any]:
             "total_voice_calls": 0,
             "average_order_value": 0.0,
         }
-
