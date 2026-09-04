@@ -836,7 +836,11 @@ def zero_load(*args, **kwargs) -> float:
 
 num_idle = 1
 server = AgentServer(
-    port=0, load_threshold=10.0, load_fnc=zero_load, num_idle_processes=num_idle
+    port=0,
+    load_threshold=10.0,
+    load_fnc=zero_load,
+    num_idle_processes=num_idle,
+    shutdown_process_timeout=3.0,
 )
 
 
@@ -884,20 +888,6 @@ async def my_agent(ctx: JobContext):
         preemptive_generation=False,
     )
 
-    user_id = await get_caller_identity(ctx)
-    assistant.user_id = user_id
-    assistant.handoff_ctx.user_id = user_id
-
-    room_name = ctx.room.name
-    assistant.call_id = room_name
-    create_call_record(call_id=room_name, user_id=user_id, channel="BROWSER")
-
-    async def _on_shutdown():
-        logger.info(f"Finalizing call analytics for room '{room_name}'")
-        finalize_call_analytics(call_id=room_name)
-
-    ctx.add_shutdown_callback(_on_shutdown)
-
     # In 512MB cloud environments (Render Free Tier), avoid neural BVC models to stay under memory limit.
     # Deepgram Nova-3 cloud STT natively filters background noise and enhances speech clarity.
     is_cloud = bool(os.getenv("RENDER") or os.getenv("PORT"))
@@ -911,7 +901,7 @@ async def my_agent(ctx: JobContext):
                 else noise_cancellation.BVC()
             )
 
-    # Start session atomically (joins room + publishes audio track simultaneously)
+    # Connect immediately: joins room + publishes audio track without waiting for identity or DB queries
     await session.start(
         agent=assistant,
         room=ctx.room,
@@ -924,6 +914,23 @@ async def my_agent(ctx: JobContext):
     logger.info(
         f"[VOICE_PIPELINE] AGENT_CONNECTED & STT_STARTED: Multi-Agent session initialized in room '{ctx.room.name}'."
     )
+
+    user_id = await get_caller_identity(ctx)
+    assistant.user_id = user_id
+    assistant.handoff_ctx.user_id = user_id
+
+    room_name = ctx.room.name
+    assistant.call_id = room_name
+    create_call_record(call_id=room_name, user_id=user_id, channel="BROWSER")
+
+    async def _on_shutdown():
+        logger.info(f"Finalizing call analytics for room '{room_name}'")
+        try:
+            finalize_call_analytics(call_id=room_name)
+        except Exception as e:
+            logger.warning(f"Error finalizing analytics for room '{room_name}': {e}")
+
+    ctx.add_shutdown_callback(_on_shutdown)
 
     cust = (
         get_customer(user_id)
