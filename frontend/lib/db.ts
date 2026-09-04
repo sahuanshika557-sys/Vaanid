@@ -79,10 +79,20 @@ function handleServerlessDbFallback(args: string[]): Record<string, unknown> {
     const query = (args[1] || '').toLowerCase();
     let response = '';
 
-    if (query.includes('revenue') || query.includes('sales') || query.includes('कमाई') || query.includes('बिक्री')) {
+    if (
+      query.includes('revenue') ||
+      query.includes('sales') ||
+      query.includes('कमाई') ||
+      query.includes('बिक्री')
+    ) {
       response =
         'Aaj ka total store revenue ₹12,450 hai with 18 completed orders! Average order value ₹691 rahi aur top selling item Basmati Rice (5kg) hai.';
-    } else if (query.includes('low stock') || query.includes('stock') || query.includes('स्टॉक') || query.includes('कम')) {
+    } else if (
+      query.includes('low stock') ||
+      query.includes('stock') ||
+      query.includes('स्टॉक') ||
+      query.includes('कम')
+    ) {
       response =
         'Filhal Aashirvaad Shudh Chakki Atta (P004) low stock mein hai (sirf 3 packs bache hain). Baaki sabhi 11 grocery items full stock mein hain!';
     } else if (query.includes('abandoned') || query.includes('छूटे')) {

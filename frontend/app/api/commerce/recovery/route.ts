@@ -10,10 +10,7 @@ export async function GET(request: NextRequest) {
     const res = runPythonDbApi(['get_followups', status || 'null']);
     return NextResponse.json(res);
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: (error as Error).message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
   }
 }
 
@@ -24,9 +21,6 @@ export async function POST(request: NextRequest) {
     const res = runPythonDbApi(['update_followup', suggestionId, status || 'APPROVED']);
     return NextResponse.json(res);
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: (error as Error).message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
   }
 }

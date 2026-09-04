@@ -3,11 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useLanguage } from '@/components/app/language-context';
-import { ThemeToggle } from '@/components/app/theme-toggle';
-import { JudgeDemoModal } from '@/components/app/judge-demo-modal';
-import { MerchantCopilotModal } from '@/components/app/merchant-copilot-modal';
-import { cn } from '@/lib/shadcn/utils';
 import {
   Activity,
   ArrowLeft,
@@ -27,6 +22,11 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { JudgeDemoModal } from '@/components/app/judge-demo-modal';
+import { useLanguage } from '@/components/app/language-context';
+import { MerchantCopilotModal } from '@/components/app/merchant-copilot-modal';
+import { ThemeToggle } from '@/components/app/theme-toggle';
+import { cn } from '@/lib/shadcn/utils';
 
 interface HeaderNavProps {
   currentBreadcrumb?: string;
@@ -68,8 +68,18 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
     { href: '/#commerce', label: 'AI Commerce', icon: Zap, active: false },
     { href: '/#recovery', label: 'Revenue Recovery', icon: TrendingUp, active: false },
     { href: '/#activity', label: 'Activity Stream', icon: Activity, active: false },
-    { href: '/analytics', label: t('navAnalytics'), icon: BarChart3, active: pathname === '/analytics' },
-    { href: '/support', label: t('navEscalations'), icon: Headphones, active: pathname === '/support' },
+    {
+      href: '/analytics',
+      label: t('navAnalytics'),
+      icon: BarChart3,
+      active: pathname === '/analytics',
+    },
+    {
+      href: '/support',
+      label: t('navEscalations'),
+      icon: Headphones,
+      active: pathname === '/support',
+    },
   ];
 
   return (
@@ -87,7 +97,7 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
                   <span className="text-foreground text-xs font-bold tracking-tight sm:text-sm md:text-base">
                     {t('brandName')}
                   </span>
-                  <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.2 text-[9px] font-bold text-cyan-400">
+                  <span className="py-0.2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-1.5 text-[9px] font-bold text-cyan-400">
                     DEMO MODE
                   </span>
                 </div>
@@ -135,7 +145,7 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
             {/* Merchant Copilot Button */}
             <button
               onClick={() => setCopilotOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1.5 text-xs font-bold text-indigo-400 transition-all hover:bg-indigo-500/20 shadow-xs"
+              className="flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1.5 text-xs font-bold text-indigo-400 shadow-xs transition-all hover:bg-indigo-500/20"
             >
               <Bot className="size-3.5" />
               <span>Merchant Copilot</span>
@@ -144,7 +154,7 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
             {/* Hackathon Judge Tour Button */}
             <button
               onClick={() => setJudgeTourOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/15 px-3 py-1.5 text-xs font-bold text-cyan-300 transition-all hover:bg-cyan-500/25 shadow-sm ring-1 ring-cyan-500/30 animate-pulse"
+              className="flex animate-pulse items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/15 px-3 py-1.5 text-xs font-bold text-cyan-300 shadow-sm ring-1 ring-cyan-500/30 transition-all hover:bg-cyan-500/25"
             >
               <Sparkles className="size-3.5 text-cyan-400" />
               <span>Judge Tour (3 Min)</span>
@@ -178,19 +188,20 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
 
         {/* Breadcrumb Sub-bar for Internal Pages */}
         {pathname !== '/' && (
-          <div className="border-border/30 bg-muted/30 flex items-center justify-between border-t px-4 py-1 text-xs text-muted-foreground md:px-8">
+          <div className="border-border/30 bg-muted/30 text-muted-foreground flex items-center justify-between border-t px-4 py-1 text-xs md:px-8">
             <div className="flex items-center gap-1.5">
-              <Link href="/" className="hover:text-emerald-500 font-medium">
+              <Link href="/" className="font-medium hover:text-emerald-500">
                 {t('dashboardBreadcrumb')}
               </Link>
-              <ChevronRight className="size-3 text-muted-foreground/60" />
+              <ChevronRight className="text-muted-foreground/60 size-3" />
               <span className="text-foreground font-semibold">
-                {currentBreadcrumb || (pathname === '/analytics' ? t('navAnalytics') : t('navEscalations'))}
+                {currentBreadcrumb ||
+                  (pathname === '/analytics' ? t('navAnalytics') : t('navEscalations'))}
               </span>
             </div>
             <button
               onClick={handleBack}
-              className="hover:text-emerald-500 flex items-center gap-1 font-medium underline underline-offset-2"
+              className="flex items-center gap-1 font-medium underline underline-offset-2 hover:text-emerald-500"
             >
               <ArrowLeft className="size-3" />
               <span>{t('backBtn')}</span>
@@ -200,7 +211,7 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="border-border/40 bg-background/95 border-b p-4 backdrop-blur-2xl md:hidden space-y-2">
+          <div className="border-border/40 bg-background/95 space-y-2 border-b p-4 backdrop-blur-2xl md:hidden">
             {pathname !== '/' && (
               <button
                 onClick={() => {
@@ -239,7 +250,7 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
                 setSettingsOpen(true);
                 setMobileMenuOpen(false);
               }}
-              className="flex w-full items-center gap-3 rounded-xl p-2.5 text-sm font-semibold text-muted-foreground hover:bg-muted"
+              className="text-muted-foreground hover:bg-muted flex w-full items-center gap-3 rounded-xl p-2.5 text-sm font-semibold"
             >
               <Settings className="size-4" />
               <span>{t('navSettings')}</span>
@@ -250,10 +261,10 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
 
       {/* Settings Modal */}
       {settingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="border-border/60 bg-card w-full max-w-md rounded-3xl border p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="border-border/60 bg-card w-full max-w-md space-y-4 rounded-3xl border p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-foreground font-bold flex items-center gap-2">
+              <h3 className="text-foreground flex items-center gap-2 font-bold">
                 <Settings className="size-4 text-emerald-500" />
                 <span>{t('navSettings')}</span>
               </h3>
@@ -270,7 +281,7 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
                 <span>Interface Language / इंटरफ़ेस भाषा</span>
                 <button
                   onClick={toggleLang}
-                  className="rounded-full bg-emerald-500/10 px-3 py-1 font-bold text-emerald-500 border border-emerald-500/30"
+                  className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-bold text-emerald-500"
                 >
                   {lang === 'en' ? 'English' : 'हिंदी (Devanagari)'}
                 </button>
@@ -278,17 +289,23 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
 
               <div className="flex items-center justify-between rounded-2xl border p-3">
                 <span>Voice Pipeline Engine</span>
-                <span className="font-mono text-emerald-500 font-semibold">Murf Falcon + LiveKit</span>
+                <span className="font-mono font-semibold text-emerald-500">
+                  Murf Falcon + LiveKit
+                </span>
               </div>
 
               <div className="flex items-center justify-between rounded-2xl border p-3">
                 <span>Speech-to-Text Model</span>
-                <span className="font-mono text-emerald-500 font-semibold">Deepgram Nova-3 Multi</span>
+                <span className="font-mono font-semibold text-emerald-500">
+                  Deepgram Nova-3 Multi
+                </span>
               </div>
 
               <div className="flex items-center justify-between rounded-2xl border p-3">
                 <span>Database Engine</span>
-                <span className="font-mono text-emerald-500 font-semibold">SQLite (local_commerce.db)</span>
+                <span className="font-mono font-semibold text-emerald-500">
+                  SQLite (local_commerce.db)
+                </span>
               </div>
             </div>
 
@@ -310,4 +327,3 @@ export function HeaderNav({ currentBreadcrumb }: HeaderNavProps) {
     </>
   );
 }
-

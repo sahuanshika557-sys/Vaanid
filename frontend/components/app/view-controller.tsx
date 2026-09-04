@@ -62,7 +62,7 @@ function CallEndedView({ onRestart }: { onRestart: () => Promise<void> | void })
             setRestarting(false);
           }
         }}
-        className="mt-8 rounded-full bg-linear-to-r from-emerald-600 to-teal-600 px-8 py-6 text-xs font-bold tracking-wider text-white uppercase shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:scale-105 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 cursor-pointer"
+        className="mt-8 cursor-pointer rounded-full bg-linear-to-r from-emerald-600 to-teal-600 px-8 py-6 text-xs font-bold tracking-wider text-white uppercase shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:scale-105 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60"
       >
         {restarting ? (
           <span className="flex items-center gap-2">

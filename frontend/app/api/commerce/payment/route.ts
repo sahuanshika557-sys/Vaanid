@@ -17,9 +17,6 @@ export async function POST(request: NextRequest) {
     const res = runPythonDbApi(['create_payment', JSON.stringify(body)]);
     return NextResponse.json(res);
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: (error as Error).message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
   }
 }

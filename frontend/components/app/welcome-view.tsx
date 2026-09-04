@@ -2,15 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useLanguage } from '@/components/app/language-context';
-import { OutboundCard } from '@/components/app/outbound-card';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/shadcn/utils';
-import { getOrCreateCustomerId } from '@/lib/utils';
-import { CATALOGUE_ITEMS, type ProductItem } from '@/lib/product-images';
-import { AgentActivityTimeline } from '@/components/app/agent-activity-timeline';
-import { OmnichannelChat } from '@/components/app/omnichannel-chat';
-import { RevenueRecoveryCard } from '@/components/app/revenue-recovery-card';
 import {
   Activity,
   ArrowRight,
@@ -36,6 +27,15 @@ import {
   Zap,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { AgentActivityTimeline } from '@/components/app/agent-activity-timeline';
+import { useLanguage } from '@/components/app/language-context';
+import { OmnichannelChat } from '@/components/app/omnichannel-chat';
+import { OutboundCard } from '@/components/app/outbound-card';
+import { RevenueRecoveryCard } from '@/components/app/revenue-recovery-card';
+import { Button } from '@/components/ui/button';
+import { CATALOGUE_ITEMS, type ProductItem } from '@/lib/product-images';
+import { cn } from '@/lib/shadcn/utils';
+import { getOrCreateCustomerId } from '@/lib/utils';
 
 function LocalCommerceAvatar({ isConnecting }: { isConnecting: boolean }) {
   return (
@@ -53,13 +53,13 @@ function LocalCommerceAvatar({ isConnecting }: { isConnecting: boolean }) {
       />
 
       {isConnecting && (
-        <div className="animate-spin absolute size-32 rounded-full border-2 border-dashed border-emerald-400/70" />
+        <div className="absolute size-32 animate-spin rounded-full border-2 border-dashed border-emerald-400/70" />
       )}
 
       {/* Main Avatar Circle */}
       <motion.div
         whileHover={{ scale: 1.05 }}
-        className="relative flex size-24 items-center justify-center rounded-full bg-linear-to-tr from-emerald-600 via-teal-500 to-emerald-400 text-white shadow-2xl shadow-emerald-500/30 ring-4 ring-emerald-400/30"
+        className="relative flex size-24 items-center justify-center rounded-full bg-linear-to-tr from-emerald-600 via-teal-500 to-emerald-400 text-white shadow-2xl ring-4 shadow-emerald-500/30 ring-emerald-400/30"
       >
         <Mic className="size-10 transition-transform duration-300" />
       </motion.div>
@@ -158,9 +158,15 @@ export const WelcomeView = ({
       try {
         setLoadingMetrics(true);
         const [sumRes, callsRes, escRes] = await Promise.all([
-          fetch('/api/analytics/summary').then((r) => r.json()).catch(() => null),
-          fetch('/api/analytics/calls?limit=5').then((r) => r.json()).catch(() => null),
-          fetch('/api/escalations').then((r) => r.json()).catch(() => null),
+          fetch('/api/analytics/summary')
+            .then((r) => r.json())
+            .catch(() => null),
+          fetch('/api/analytics/calls?limit=5')
+            .then((r) => r.json())
+            .catch(() => null),
+          fetch('/api/escalations')
+            .then((r) => r.json())
+            .catch(() => null),
         ]);
 
         if (sumRes && sumRes.success) {
@@ -201,7 +207,7 @@ export const WelcomeView = ({
     >
       {/* Ambient Radial Background Glows */}
       <div className="pointer-events-none fixed top-1/4 left-1/2 -z-10 size-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/10 blur-[140px]" />
-      <div className="pointer-events-none fixed bottom-10 right-10 -z-10 size-[500px] rounded-full bg-teal-500/10 blur-[130px]" />
+      <div className="pointer-events-none fixed right-10 bottom-10 -z-10 size-[500px] rounded-full bg-teal-500/10 blur-[130px]" />
 
       <main className="flex w-full max-w-7xl flex-col items-center space-y-16">
         {/* =================================================================== */}
@@ -211,7 +217,7 @@ export const WelcomeView = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="flex w-full max-w-4xl flex-col items-center text-center space-y-6 pt-4"
+          className="flex w-full max-w-4xl flex-col items-center space-y-6 pt-4 text-center"
         >
           {/* Status Badges Header */}
           <div className="flex flex-wrap items-center justify-center gap-2.5">
@@ -252,7 +258,7 @@ export const WelcomeView = ({
 
           {/* Customer Memory Badge */}
           {customerId && (
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-400 backdrop-blur-md shadow-xs">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-400 shadow-xs backdrop-blur-md">
               <ShieldCheck className="size-4 text-emerald-400" />
               <span>
                 {lang === 'en'
@@ -269,24 +275,24 @@ export const WelcomeView = ({
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.15 }}
-            className="relative w-full max-w-5xl my-4 group"
+            className="group relative my-4 w-full max-w-5xl"
           >
             {/* Ambient Radial Pulsing Aura */}
-            <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-500 opacity-30 blur-2xl transition duration-1000 group-hover:opacity-50 animate-pulse" />
+            <div className="absolute -inset-1 animate-pulse rounded-3xl bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-500 opacity-30 blur-2xl transition duration-1000 group-hover:opacity-50" />
 
-            <div className="relative overflow-hidden rounded-3xl border border-emerald-500/40 bg-card/90 shadow-2xl backdrop-blur-2xl">
+            <div className="bg-card/90 relative overflow-hidden rounded-3xl border border-emerald-500/40 shadow-2xl backdrop-blur-2xl">
               {/* Top Dashboard Header Bar */}
-              <div className="flex items-center justify-between border-b border-border/50 bg-background/80 px-6 py-3.5 backdrop-blur-md">
+              <div className="border-border/50 bg-background/80 flex items-center justify-between border-b px-6 py-3.5 backdrop-blur-md">
                 <div className="flex items-center gap-2">
                   <span className="size-3 rounded-full bg-rose-500/80" />
                   <span className="size-3 rounded-full bg-amber-500/80" />
                   <span className="size-3 rounded-full bg-emerald-500/80" />
-                  <span className="ml-3 font-mono text-xs font-bold text-muted-foreground">
+                  <span className="text-muted-foreground ml-3 font-mono text-xs font-bold">
                     dukanvaani.ai/live-terminal • Real-Time Voice Commerce Engine
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400 border border-emerald-500/20">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400">
                     <span className="size-1.5 animate-ping rounded-full bg-emerald-400" />
                     LIVE TELEMETRY
                   </span>
@@ -294,30 +300,36 @@ export const WelcomeView = ({
               </div>
 
               {/* High-Definition Dashboard Interface Graphic with Floating Real-Life Layers */}
-              <div className="relative h-80 sm:h-96 md:h-[420px] w-full overflow-hidden bg-zinc-950">
+              <div className="relative h-80 w-full overflow-hidden bg-zinc-950 sm:h-96 md:h-[420px]">
                 <img
                   src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1600&q=80"
                   alt="DukanVaani AI Dashboard"
                   className="size-full object-cover object-center opacity-40 transition-transform duration-700 group-hover:scale-103"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                <div className="from-background via-background/60 absolute inset-0 bg-gradient-to-t to-transparent" />
 
                 {/* Floating Animated Badge 1: Live Voice Order */}
                 <motion.div
                   animate={{ y: [0, -8, 0] }}
                   transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  className="absolute top-6 right-6 hidden sm:flex items-center gap-3 rounded-2xl border border-emerald-500/40 bg-background/90 p-3.5 shadow-2xl backdrop-blur-xl max-w-xs text-left"
+                  className="bg-background/90 absolute top-6 right-6 hidden max-w-xs items-center gap-3 rounded-2xl border border-emerald-500/40 p-3.5 text-left shadow-2xl backdrop-blur-xl sm:flex"
                 >
-                  <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
                     <ShoppingBag className="size-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[11px] font-bold text-emerald-400">Live Voice Cart</span>
+                      <span className="size-2 animate-pulse rounded-full bg-emerald-400" />
+                      <span className="text-[11px] font-bold text-emerald-400">
+                        Live Voice Cart
+                      </span>
                     </div>
-                    <p className="text-foreground text-xs font-bold leading-snug">5kg Basmati Rice + 1L Oil</p>
-                    <span className="text-[11px] font-mono text-emerald-400 font-extrabold">₹485 • Verified</span>
+                    <p className="text-foreground text-xs leading-snug font-bold">
+                      5kg Basmati Rice + 1L Oil
+                    </p>
+                    <span className="font-mono text-[11px] font-extrabold text-emerald-400">
+                      ₹485 • Verified
+                    </span>
                   </div>
                 </motion.div>
 
@@ -325,33 +337,35 @@ export const WelcomeView = ({
                 <motion.div
                   animate={{ y: [0, 8, 0] }}
                   transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                  className="absolute bottom-10 left-6 hidden sm:flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-background/90 p-3.5 shadow-2xl backdrop-blur-xl max-w-xs text-left"
+                  className="bg-background/90 absolute bottom-10 left-6 hidden max-w-xs items-center gap-3 rounded-2xl border border-teal-500/40 p-3.5 text-left shadow-2xl backdrop-blur-xl sm:flex"
                 >
-                  <div className="flex size-10 items-center justify-center rounded-xl bg-teal-500/20 text-teal-400 shrink-0">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-teal-500/20 text-teal-400">
                     <CheckCircle2 className="size-5" />
                   </div>
                   <div>
                     <span className="text-[11px] font-bold text-teal-400">Instant Settlement</span>
-                    <p className="text-foreground text-xs font-bold leading-snug">UPI ID: sharma.kirana@upi</p>
-                    <span className="text-[11px] text-muted-foreground">Settled in 0.4s</span>
+                    <p className="text-foreground text-xs leading-snug font-bold">
+                      UPI ID: sharma.kirana@upi
+                    </p>
+                    <span className="text-muted-foreground text-[11px]">Settled in 0.4s</span>
                   </div>
                 </motion.div>
 
                 {/* Floating Center Voice Soundwave Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 space-y-4">
+                <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4 p-6 text-center">
                   <motion.div
                     whileHover={{ scale: 1.05 }}
-                    className="flex size-20 items-center justify-center rounded-full bg-linear-to-tr from-emerald-600 via-teal-500 to-emerald-400 text-white shadow-2xl shadow-emerald-500/40 ring-4 ring-emerald-400/40 cursor-pointer"
+                    className="flex size-20 cursor-pointer items-center justify-center rounded-full bg-linear-to-tr from-emerald-600 via-teal-500 to-emerald-400 text-white shadow-2xl ring-4 shadow-emerald-500/40 ring-emerald-400/40"
                     onClick={onStartCall}
                   >
                     <Mic className="size-9 animate-pulse" />
                   </motion.div>
 
                   <div className="space-y-1">
-                    <h3 className="text-foreground text-xl sm:text-2xl font-extrabold tracking-tight">
+                    <h3 className="text-foreground text-xl font-extrabold tracking-tight sm:text-2xl">
                       {lang === 'en' ? 'Anisha AI Active Voice Hub' : 'अनीशा AI लाइव वॉइस हब'}
                     </h3>
-                    <p className="text-muted-foreground text-xs sm:text-sm max-w-md">
+                    <p className="text-muted-foreground max-w-md text-xs sm:text-sm">
                       {lang === 'en'
                         ? 'Click the microphone to start shopping with your voice.'
                         : 'वॉइस से ग्रोसरी शॉपिंग शुरू करने के लिए माइक पर क्लिक करें।'}
@@ -369,7 +383,7 @@ export const WelcomeView = ({
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="group relative w-full overflow-hidden rounded-3xl border border-emerald-500/30 bg-card/60 p-6 shadow-2xl backdrop-blur-2xl text-left transition-all duration-300 hover:border-emerald-500/60"
+            className="group bg-card/60 relative w-full overflow-hidden rounded-3xl border border-emerald-500/30 p-6 text-left shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:border-emerald-500/60"
           >
             {/* Background High-Def Kirana Store Image with Gradient Overlay */}
             <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -378,21 +392,21 @@ export const WelcomeView = ({
                 alt="Sharma Kirana & General Store"
                 className="size-full object-cover opacity-20 transition-transform duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-background/70" />
+              <div className="from-background via-background/90 to-background/70 absolute inset-0 bg-gradient-to-r" />
             </div>
 
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="space-y-2 max-w-xl">
-                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
+            <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+              <div className="max-w-xl space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-400">
                   <Store className="size-3.5" />
                   <span>Sharma Kirana & General Mart • Kanpur Main Market</span>
                 </div>
-                <h2 className="text-foreground text-2xl font-extrabold sm:text-3xl tracking-tight">
+                <h2 className="text-foreground text-2xl font-extrabold tracking-tight sm:text-3xl">
                   {lang === 'en'
                     ? 'Hyperlocal Voice Commerce in Action'
                     : 'आपकी अपनी दुकान — सुपरफास्ट वॉइस AI के साथ'}
                 </h2>
-                <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
+                <p className="text-muted-foreground text-xs leading-relaxed sm:text-sm">
                   {lang === 'en'
                     ? 'Experience instant Kirana shopping with Anisha AI: check stock, add items to cart, compute discounts, and manage orders with 100% natural voice in Hindi & Hinglish.'
                     : 'अनीशा AI के साथ रियल-टाइम में ग्रोसरी खोजें, कार्ट में सामान जोड़ें, बिल कैलकुलेट करें और रिटर्न प्रोसेस करें — बिना किसी टाइपिंग के!'}
@@ -400,22 +414,26 @@ export const WelcomeView = ({
               </div>
 
               {/* Live Assistant Quick Stats Box */}
-              <div className="flex flex-col gap-2 rounded-2xl border border-emerald-500/30 bg-background/80 p-4 backdrop-blur-md shrink-0 w-full md:w-64">
+              <div className="bg-background/80 flex w-full shrink-0 flex-col gap-2 rounded-2xl border border-emerald-500/30 p-4 backdrop-blur-md md:w-64">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground">Voice Engine</span>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="text-muted-foreground text-xs font-semibold">Voice Engine</span>
+                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-400">
                     Murf Falcon ⚡ 110ms
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground">Speech Recognition</span>
+                  <span className="text-muted-foreground text-xs font-semibold">
+                    Speech Recognition
+                  </span>
                   <span className="text-[11px] font-bold text-teal-400">Deepgram Nova-3 Multi</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground">AI Intelligence</span>
+                  <span className="text-muted-foreground text-xs font-semibold">
+                    AI Intelligence
+                  </span>
                   <span className="text-[11px] font-bold text-sky-400">Gemini 3.5 Flash Lite</span>
                 </div>
-                <div className="mt-1 pt-2 border-t border-border/50 flex items-center justify-between text-xs">
+                <div className="border-border/50 mt-1 flex items-center justify-between border-t pt-2 text-xs">
                   <span className="text-muted-foreground">Delivery Speed</span>
                   <span className="font-bold text-emerald-400">⚡ 15 Mins Hyperlocal</span>
                 </div>
@@ -423,14 +441,22 @@ export const WelcomeView = ({
             </div>
 
             {/* Interactive Quick Voice Action Pills */}
-            <div className="mt-6 pt-4 border-t border-border/40">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block mb-2.5">
-                {lang === 'en' ? '🎙️ Try Saying These to Anisha:' : '🎙️ अनीशा से ये बोलकर ट्राई करें:'}
+            <div className="border-border/40 mt-6 border-t pt-4">
+              <span className="mb-2.5 block text-xs font-bold tracking-wider text-emerald-400 uppercase">
+                {lang === 'en'
+                  ? '🎙️ Try Saying These to Anisha:'
+                  : '🎙️ अनीशा से ये बोलकर ट्राई करें:'}
               </span>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { text: '🗣️ "बासमती चावल 5 किलो कार्ट में जोड़ो"', action: 'Basmati Rice 5kg Add' },
-                  { text: '🗣️ "फॉर्च्यून सनफ्लावर तेल का क्या दाम है?"', action: 'Oil Price Check' },
+                  {
+                    text: '🗣️ "बासमती चावल 5 किलो कार्ट में जोड़ो"',
+                    action: 'Basmati Rice 5kg Add',
+                  },
+                  {
+                    text: '🗣️ "फॉर्च्यून सनफ्लावर तेल का क्या दाम है?"',
+                    action: 'Oil Price Check',
+                  },
                   { text: '🗣️ "मेरा टोटल बिल कितना हुआ?"', action: 'Calculate Bill' },
                   { text: '🗣️ "₹500 में ग्रोसरी कॉम्बो बताओ"', action: 'Smart Recommendation' },
                   { text: '🗣️ "पिछला ऑर्डर रिटर्न करना है"', action: 'Returns & Refunds' },
@@ -440,7 +466,7 @@ export const WelcomeView = ({
                     whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={onStartCall}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground transition-all hover:border-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 shadow-xs"
+                    className="bg-background/80 text-foreground inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/25 px-3 py-1.5 text-xs font-medium shadow-xs transition-all hover:border-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
                   >
                     <span>{pill.text}</span>
                   </motion.button>
@@ -457,12 +483,12 @@ export const WelcomeView = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="w-full grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
           {/* Card 1: Total Calls */}
           <div className="border-border/60 bg-card/80 relative overflow-hidden rounded-3xl border p-6 shadow-xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/40">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+              <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 {t('totalCalls')}
               </span>
               <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
@@ -483,7 +509,7 @@ export const WelcomeView = ({
           {/* Card 2: Successful Calls */}
           <div className="border-border/60 bg-card/80 relative overflow-hidden rounded-3xl border p-6 shadow-xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-teal-500/40">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+              <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 {t('successfulCalls')}
               </span>
               <div className="flex size-10 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-400">
@@ -492,7 +518,11 @@ export const WelcomeView = ({
             </div>
             <div className="mt-4 flex items-baseline justify-between">
               <span className="text-foreground font-mono text-3xl font-extrabold text-teal-400">
-                {loadingMetrics ? '...' : <AnimatedCounter value={summaryData?.successful_calls || 0} />}
+                {loadingMetrics ? (
+                  '...'
+                ) : (
+                  <AnimatedCounter value={summaryData?.successful_calls || 0} />
+                )}
               </span>
               <span className="text-muted-foreground text-xs font-medium">Verified</span>
             </div>
@@ -501,7 +531,7 @@ export const WelcomeView = ({
           {/* Card 3: Failed Calls */}
           <div className="border-border/60 bg-card/80 relative overflow-hidden rounded-3xl border p-6 shadow-xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-rose-500/40">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+              <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 {t('failedCalls')}
               </span>
               <div className="flex size-10 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-500">
@@ -510,7 +540,11 @@ export const WelcomeView = ({
             </div>
             <div className="mt-4 flex items-baseline justify-between">
               <span className="text-foreground font-mono text-3xl font-extrabold text-rose-400">
-                {loadingMetrics ? '...' : <AnimatedCounter value={summaryData?.failed_calls || 0} />}
+                {loadingMetrics ? (
+                  '...'
+                ) : (
+                  <AnimatedCounter value={summaryData?.failed_calls || 0} />
+                )}
               </span>
               <span className="text-muted-foreground text-xs font-medium">Categorized</span>
             </div>
@@ -519,7 +553,7 @@ export const WelcomeView = ({
           {/* Card 4: Success Rate */}
           <div className="border-border/60 bg-card/80 relative overflow-hidden rounded-3xl border p-6 shadow-xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/40">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+              <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 {t('successRate')}
               </span>
               <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
@@ -528,7 +562,11 @@ export const WelcomeView = ({
             </div>
             <div className="mt-4 flex items-baseline justify-between">
               <span className="text-foreground font-mono text-3xl font-extrabold text-emerald-400">
-                {loadingMetrics ? '...' : <AnimatedCounter value={summaryData?.success_rate || 0} suffix="%" />}
+                {loadingMetrics ? (
+                  '...'
+                ) : (
+                  <AnimatedCounter value={summaryData?.success_rate || 0} suffix="%" />
+                )}
               </span>
               <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400">
                 Target &gt;90%
@@ -621,7 +659,7 @@ export const WelcomeView = ({
           transition={{ duration: 0.5, delay: 0.3 }}
           className="w-full space-y-4 text-left"
         >
-          <h3 className="text-foreground text-xl font-bold tracking-tight flex items-center gap-2">
+          <h3 className="text-foreground flex items-center gap-2 text-xl font-bold tracking-tight">
             <Sparkles className="size-5 text-emerald-500" />
             <span>{t('quickActionsTitle')}</span>
           </h3>
@@ -640,7 +678,7 @@ export const WelcomeView = ({
                   <p className="text-muted-foreground text-[11px]">Browser WebRTC</p>
                 </div>
               </div>
-              <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-emerald-500" />
+              <ArrowRight className="text-muted-foreground size-4 transition-transform group-hover:translate-x-1 group-hover:text-emerald-500" />
             </button>
 
             <a
@@ -652,11 +690,13 @@ export const WelcomeView = ({
                   <PhoneCall className="size-5" />
                 </div>
                 <div>
-                  <h4 className="text-foreground text-sm font-semibold">{t('actionOutboundCall')}</h4>
+                  <h4 className="text-foreground text-sm font-semibold">
+                    {t('actionOutboundCall')}
+                  </h4>
                   <p className="text-muted-foreground text-[11px]">SIP Linphone Trunk</p>
                 </div>
               </div>
-              <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-teal-400" />
+              <ArrowRight className="text-muted-foreground size-4 transition-transform group-hover:translate-x-1 group-hover:text-teal-400" />
             </a>
 
             <Link
@@ -672,7 +712,7 @@ export const WelcomeView = ({
                   <p className="text-muted-foreground text-[11px]">Consent Tickets (/support)</p>
                 </div>
               </div>
-              <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-amber-400" />
+              <ArrowRight className="text-muted-foreground size-4 transition-transform group-hover:translate-x-1 group-hover:text-amber-400" />
             </Link>
 
             <Link
@@ -684,11 +724,13 @@ export const WelcomeView = ({
                   <BarChart3 className="size-5" />
                 </div>
                 <div>
-                  <h4 className="text-foreground text-sm font-semibold">{t('actionViewAnalytics')}</h4>
+                  <h4 className="text-foreground text-sm font-semibold">
+                    {t('actionViewAnalytics')}
+                  </h4>
                   <p className="text-muted-foreground text-[11px]">Full Metrics (/analytics)</p>
                 </div>
               </div>
-              <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-emerald-400" />
+              <ArrowRight className="text-muted-foreground size-4 transition-transform group-hover:translate-x-1 group-hover:text-emerald-400" />
             </Link>
           </div>
         </motion.section>
@@ -722,9 +764,9 @@ export const WelcomeView = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.35 }}
-          className="border-border/60 bg-card/80 w-full rounded-3xl border p-6 shadow-xl backdrop-blur-xl space-y-6 text-left"
+          className="border-border/60 bg-card/80 w-full space-y-6 rounded-3xl border p-6 text-left shadow-xl backdrop-blur-xl"
         >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
                 <ShoppingBag className="size-5" />
@@ -769,11 +811,11 @@ export const WelcomeView = ({
                 key={item.id}
                 whileHover={{ y: -5, scale: 1.02 }}
                 transition={{ duration: 0.2 }}
-                className="group border-border/50 bg-background/70 relative overflow-hidden rounded-3xl border p-4 shadow-md backdrop-blur-md transition-all hover:border-emerald-500/50 hover:shadow-xl flex flex-col justify-between"
+                className="group border-border/50 bg-background/70 relative flex flex-col justify-between overflow-hidden rounded-3xl border p-4 shadow-md backdrop-blur-md transition-all hover:border-emerald-500/50 hover:shadow-xl"
               >
                 <div>
                   {/* Item Image with Animated Zoom */}
-                  <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-emerald-500/20 bg-muted/40 mb-3">
+                  <div className="bg-muted/40 relative mb-3 h-44 w-full overflow-hidden rounded-2xl border border-emerald-500/20">
                     <img
                       src={item.image}
                       alt={item.name}
@@ -785,11 +827,11 @@ export const WelcomeView = ({
                       className="size-full object-cover transition-transform duration-700 group-hover:scale-108"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                    
+
                     {/* Top Badges */}
                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
                       {item.badge && (
-                        <span className="rounded-full bg-emerald-600/90 text-white px-2.5 py-0.5 text-[10px] font-bold shadow-md backdrop-blur-sm">
+                        <span className="rounded-full bg-emerald-600/90 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md backdrop-blur-sm">
                           {item.badge}
                         </span>
                       )}
@@ -798,7 +840,7 @@ export const WelcomeView = ({
                     <div className="absolute top-2.5 right-2.5">
                       <span
                         className={cn(
-                          'text-[10px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md shadow-sm',
+                          'rounded-full px-2.5 py-0.5 text-[10px] font-bold shadow-sm backdrop-blur-md',
                           item.stock > 5
                             ? 'bg-emerald-500/90 text-white'
                             : item.stock > 0
@@ -806,17 +848,21 @@ export const WelcomeView = ({
                               : 'bg-rose-500/90 text-white'
                         )}
                       >
-                        {item.stock > 5 ? 'In Stock' : item.stock > 0 ? `Low (${item.stock})` : 'Out of Stock'}
+                        {item.stock > 5
+                          ? 'In Stock'
+                          : item.stock > 0
+                            ? `Low (${item.stock})`
+                            : 'Out of Stock'}
                       </span>
                     </div>
 
                     {/* Bottom Image Overlay Info */}
-                    <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between text-white">
-                      <span className="text-xs font-mono font-bold drop-shadow-md">
+                    <div className="absolute inset-x-2.5 bottom-2.5 flex items-center justify-between text-white">
+                      <span className="font-mono text-xs font-bold drop-shadow-md">
                         {item.unit}
                       </span>
                       {item.rating && (
-                        <span className="flex items-center gap-1 text-[11px] font-bold bg-black/50 px-2 py-0.5 rounded-md backdrop-blur-md">
+                        <span className="flex items-center gap-1 rounded-md bg-black/50 px-2 py-0.5 text-[11px] font-bold backdrop-blur-md">
                           ⭐ {item.rating}
                         </span>
                       )}
@@ -825,28 +871,28 @@ export const WelcomeView = ({
 
                   <div className="flex flex-col space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                      <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
                         {item.category}
                       </span>
-                      <span className="text-muted-foreground text-[11px] font-medium truncate max-w-[140px]">
+                      <span className="text-muted-foreground max-w-[140px] truncate text-[11px] font-medium">
                         📍 {item.location}
                       </span>
                     </div>
 
-                    <h4 className="text-foreground font-bold text-base leading-snug group-hover:text-emerald-400 transition-colors">
+                    <h4 className="text-foreground text-base leading-snug font-bold transition-colors group-hover:text-emerald-400">
                       {item.name}
                     </h4>
 
-                    <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed">
+                    <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
                       {item.description}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between">
+                <div className="border-border/40 mt-4 flex items-center justify-between border-t pt-3">
                   <div>
-                    <span className="text-xs text-muted-foreground block font-medium">Price:</span>
-                    <span className="text-emerald-400 font-mono text-xl font-extrabold">
+                    <span className="text-muted-foreground block text-xs font-medium">Price:</span>
+                    <span className="font-mono text-xl font-extrabold text-emerald-400">
                       ₹{item.price}
                     </span>
                   </div>
@@ -855,7 +901,7 @@ export const WelcomeView = ({
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={onStartCall}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-linear-to-r from-emerald-600 to-teal-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-500/20 hover:from-emerald-500 hover:to-teal-500 transition-all"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-linear-to-r from-emerald-600 to-teal-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-500/20 transition-all hover:from-emerald-500 hover:to-teal-500"
                   >
                     <Mic className="size-3.5" />
                     <span>Ask Anisha</span>
@@ -881,7 +927,7 @@ export const WelcomeView = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="border-border/60 bg-card/80 w-full rounded-3xl border p-6 shadow-xl backdrop-blur-xl space-y-4 text-left"
+          className="border-border/60 bg-card/80 w-full space-y-4 rounded-3xl border p-6 text-left shadow-xl backdrop-blur-xl"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -890,7 +936,9 @@ export const WelcomeView = ({
               </div>
               <div>
                 <h3 className="text-foreground text-lg font-bold">{t('recentConversations')}</h3>
-                <p className="text-muted-foreground text-xs">Real-time call events from SQLite database</p>
+                <p className="text-muted-foreground text-xs">
+                  Real-time call events from SQLite database
+                </p>
               </div>
             </div>
 
@@ -906,52 +954,56 @@ export const WelcomeView = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-border/50 text-muted-foreground border-b uppercase font-semibold text-[11px] tracking-wider">
-                  <th className="py-3 px-3">{t('colCustomer')}</th>
-                  <th className="py-3 px-3">{t('colIntent')}</th>
-                  <th className="py-3 px-3">{t('colLanguage')}</th>
-                  <th className="py-3 px-3">{t('colAgent')}</th>
-                  <th className="py-3 px-3">{t('colOutcome')}</th>
-                  <th className="py-3 px-3">{t('colTime')}</th>
+                <tr className="border-border/50 text-muted-foreground border-b text-[11px] font-semibold tracking-wider uppercase">
+                  <th className="px-3 py-3">{t('colCustomer')}</th>
+                  <th className="px-3 py-3">{t('colIntent')}</th>
+                  <th className="px-3 py-3">{t('colLanguage')}</th>
+                  <th className="px-3 py-3">{t('colAgent')}</th>
+                  <th className="px-3 py-3">{t('colOutcome')}</th>
+                  <th className="px-3 py-3">{t('colTime')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/30">
+              <tbody className="divide-border/30 divide-y">
                 {recentCalls.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="text-muted-foreground py-8 text-center">
                       {t('noConversations')}
                     </td>
                   </tr>
                 ) : (
                   recentCalls.map((call, idx) => (
                     <tr key={call.call_id || idx} className="hover:bg-muted/30 transition-colors">
-                      <td className="py-3.5 px-3 font-semibold text-foreground flex items-center gap-2">
+                      <td className="text-foreground flex items-center gap-2 px-3 py-3.5 font-semibold">
                         <User className="size-3.5 text-emerald-500" />
                         <span>{call.customer_name || 'Radhika Sharma'}</span>
                       </td>
-                      <td className="py-3.5 px-3">
+                      <td className="px-3 py-3.5">
                         <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-[11px] text-emerald-400">
                           {call.intent || 'PRODUCT_ENQUIRY'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-3 text-muted-foreground">{call.language || 'Hinglish'}</td>
-                      <td className="py-3.5 px-3 font-mono text-muted-foreground">
+                      <td className="text-muted-foreground px-3 py-3.5">
+                        {call.language || 'Hinglish'}
+                      </td>
+                      <td className="text-muted-foreground px-3 py-3.5 font-mono">
                         {call.agent_type === 'SPECIALIST' ? 'Returns Specialist' : 'Main Agent'}
                       </td>
-                      <td className="py-3.5 px-3">
+                      <td className="px-3 py-3.5">
                         <span
                           className={cn(
                             'rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase',
                             call.outcome === 'SUCCESS'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                              ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                              : 'border border-rose-500/30 bg-rose-500/10 text-rose-400'
                           )}
                         >
                           {call.outcome || 'SUCCESS'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-3 text-muted-foreground font-mono text-[11px]">
-                        {call.started_at ? new Date(call.started_at).toLocaleTimeString() : 'Just now'}
+                      <td className="text-muted-foreground px-3 py-3.5 font-mono text-[11px]">
+                        {call.started_at
+                          ? new Date(call.started_at).toLocaleTimeString()
+                          : 'Just now'}
                       </td>
                     </tr>
                   ))
@@ -964,9 +1016,9 @@ export const WelcomeView = ({
         {/* =================================================================== */}
         {/* 7. SPECIALIST AGENTS & HUMAN ESCALATION SECTIONS */}
         {/* =================================================================== */}
-        <section id="agents" className="w-full grid grid-cols-1 gap-6 md:grid-cols-2 text-left">
+        <section id="agents" className="grid w-full grid-cols-1 gap-6 text-left md:grid-cols-2">
           {/* Main Commerce Agent Card */}
-          <div className="border-border/60 bg-card/80 rounded-3xl border p-6 shadow-xl backdrop-blur-xl space-y-4">
+          <div className="border-border/60 bg-card/80 space-y-4 rounded-3xl border p-6 shadow-xl backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
@@ -977,29 +1029,30 @@ export const WelcomeView = ({
                   <p className="text-muted-foreground text-xs">Anisha — Primary Assistant</p>
                 </div>
               </div>
-              <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
+              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
                 {t('agentOnline')}
               </span>
             </div>
 
             <p className="text-muted-foreground text-xs leading-relaxed">
-              Handles product discovery, catalogue lookups, price estimation, stock availability, and estimated subtotals.
+              Handles product discovery, catalogue lookups, price estimation, stock availability,
+              and estimated subtotals.
             </p>
 
             <div className="space-y-2 pt-2 text-xs">
-              <div className="flex items-center justify-between border-b pb-2 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center justify-between border-b pb-2">
                 <span>Scope:</span>
                 <span className="text-foreground font-medium">Catalogue & Store Info</span>
               </div>
-              <div className="flex items-center justify-between text-muted-foreground">
+              <div className="text-muted-foreground flex items-center justify-between">
                 <span>Supported Languages:</span>
-                <span className="text-emerald-400 font-semibold">English • Hindi • Hinglish</span>
+                <span className="font-semibold text-emerald-400">English • Hindi • Hinglish</span>
               </div>
             </div>
           </div>
 
           {/* Returns & Refunds Specialist Card */}
-          <div className="border-border/60 bg-card/80 rounded-3xl border p-6 shadow-xl backdrop-blur-xl space-y-4">
+          <div className="border-border/60 bg-card/80 space-y-4 rounded-3xl border p-6 shadow-xl backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex size-10 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-400">
@@ -1010,30 +1063,34 @@ export const WelcomeView = ({
                   <p className="text-muted-foreground text-xs">Day 9 Context-Preserving Handoff</p>
                 </div>
               </div>
-              <span className="rounded-full bg-teal-500/10 border border-teal-500/30 px-2.5 py-0.5 text-[10px] font-bold text-teal-400">
+              <span className="rounded-full border border-teal-500/30 bg-teal-500/10 px-2.5 py-0.5 text-[10px] font-bold text-teal-400">
                 {t('agentOnline')}
               </span>
             </div>
 
             <p className="text-muted-foreground text-xs leading-relaxed">
-              Handles return requests, refund status checks, return eligibility verification, and damaged product reports.
+              Handles return requests, refund status checks, return eligibility verification, and
+              damaged product reports.
             </p>
 
             <div className="space-y-2 pt-2 text-xs">
-              <div className="flex items-center justify-between border-b pb-2 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center justify-between border-b pb-2">
                 <span>Scope:</span>
                 <span className="text-foreground font-medium">Returns, Refunds & Disputes</span>
               </div>
-              <div className="flex items-center justify-between text-muted-foreground">
+              <div className="text-muted-foreground flex items-center justify-between">
                 <span>Handoff Target:</span>
-                <span className="text-teal-400 font-semibold">Returns Specialist Agent</span>
+                <span className="font-semibold text-teal-400">Returns Specialist Agent</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* Human Escalation Overview Section */}
-        <section id="escalation-overview" className="w-full border-border/60 bg-card/80 rounded-3xl border p-6 shadow-xl backdrop-blur-xl text-left space-y-4">
+        <section
+          id="escalation-overview"
+          className="border-border/60 bg-card/80 w-full space-y-4 rounded-3xl border p-6 text-left shadow-xl backdrop-blur-xl"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400">
@@ -1041,7 +1098,9 @@ export const WelcomeView = ({
               </div>
               <div>
                 <h3 className="text-foreground font-bold">{t('navEscalations')}</h3>
-                <p className="text-muted-foreground text-xs">Consent-Gated Support Tickets (SQLite DB)</p>
+                <p className="text-muted-foreground text-xs">
+                  Consent-Gated Support Tickets (SQLite DB)
+                </p>
               </div>
             </div>
 
@@ -1055,21 +1114,24 @@ export const WelcomeView = ({
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="border-border/40 bg-muted/20 rounded-2xl border p-4 flex items-center justify-between">
+            <div className="border-border/40 bg-muted/20 flex items-center justify-between rounded-2xl border p-4">
               <span className="text-muted-foreground text-xs">{t('openRequests')}</span>
               <span className="font-mono text-xl font-bold text-amber-400">
-                {escalationData.filter((e) => e.status === 'OPEN' || e.status === 'IN_PROGRESS').length}
+                {
+                  escalationData.filter((e) => e.status === 'OPEN' || e.status === 'IN_PROGRESS')
+                    .length
+                }
               </span>
             </div>
 
-            <div className="border-border/40 bg-muted/20 rounded-2xl border p-4 flex items-center justify-between">
+            <div className="border-border/40 bg-muted/20 flex items-center justify-between rounded-2xl border p-4">
               <span className="text-muted-foreground text-xs">{t('inProgress')}</span>
               <span className="font-mono text-xl font-bold text-sky-400">
                 {escalationData.filter((e) => e.status === 'IN_PROGRESS').length}
               </span>
             </div>
 
-            <div className="border-border/40 bg-muted/20 rounded-2xl border p-4 flex items-center justify-between">
+            <div className="border-border/40 bg-muted/20 flex items-center justify-between rounded-2xl border p-4">
               <span className="text-muted-foreground text-xs">{t('resolved')}</span>
               <span className="font-mono text-xl font-bold text-emerald-400">
                 {escalationData.filter((e) => e.status === 'RESOLVED').length}
@@ -1079,12 +1141,12 @@ export const WelcomeView = ({
         </section>
       </main>
 
-      <footer className="w-full pt-16 text-center text-xs text-muted-foreground space-y-1">
+      <footer className="text-muted-foreground w-full space-y-1 pt-16 text-center text-xs">
         <p>
           Powered by <span className="text-foreground font-semibold">Murf Falcon TTS</span> &{' '}
           <span className="text-foreground font-semibold">LiveKit Agents</span>
         </p>
-        <p className="text-[11px] text-muted-foreground/60">
+        <p className="text-muted-foreground/60 text-[11px]">
           Local Commerce Voice AI Platform • Radhika Sharma
         </p>
       </footer>

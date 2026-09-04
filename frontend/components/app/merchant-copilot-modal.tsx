@@ -1,22 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
+  AlertTriangle,
   Bot,
+  CheckCircle2,
+  Database,
+  Package,
   Send,
+  ShoppingCart,
   Sparkles,
   TrendingUp,
-  Package,
-  ShoppingCart,
-  AlertTriangle,
-  Database,
-  CheckCircle2,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface MerchantCopilotModalProps {
   isOpen: boolean;
@@ -60,10 +60,7 @@ export function MerchantCopilotModal({ isOpen, onClose }: MerchantCopilotModalPr
       });
       const data = await res.json();
       if (data.success) {
-        setMessages((prev) => [
-          ...prev,
-          { sender: 'copilot', text: data.answer, data: data.data },
-        ]);
+        setMessages((prev) => [...prev, { sender: 'copilot', text: data.answer, data: data.data }]);
       } else {
         setMessages((prev) => [
           ...prev,
@@ -82,18 +79,18 @@ export function MerchantCopilotModal({ isOpen, onClose }: MerchantCopilotModalPr
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in">
-      <div className="relative w-full max-w-2xl rounded-3xl border border-zinc-800 bg-zinc-950 p-6 text-white shadow-2xl space-y-4">
+    <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+      <div className="relative w-full max-w-2xl space-y-4 rounded-3xl border border-zinc-800 bg-zinc-950 p-6 text-white shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <div className="flex size-9 items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/20 text-indigo-400">
               <Bot className="size-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-white">Merchant Copilot</h2>
-                <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[10px]">
+                <Badge className="border-indigo-500/30 bg-indigo-500/20 text-[10px] text-indigo-300">
                   Live SQLite DB Backed
                 </Badge>
               </div>
@@ -104,7 +101,7 @@ export function MerchantCopilotModal({ isOpen, onClose }: MerchantCopilotModalPr
           </div>
           <button
             onClick={onClose}
-            className="rounded-xl p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+            className="rounded-xl p-1.5 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
           >
             <X className="size-5" />
           </button>
@@ -117,7 +114,7 @@ export function MerchantCopilotModal({ isOpen, onClose }: MerchantCopilotModalPr
               key={i}
               onClick={() => handleSend(prompt)}
               disabled={loading}
-              className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 hover:border-indigo-500/50 hover:bg-indigo-950/30 hover:text-indigo-200 transition-colors duration-200"
+              className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition-colors duration-200 hover:border-indigo-500/50 hover:bg-indigo-950/30 hover:text-indigo-200"
             >
               💡 {prompt}
             </button>
@@ -125,7 +122,7 @@ export function MerchantCopilotModal({ isOpen, onClose }: MerchantCopilotModalPr
         </div>
 
         {/* Chat History */}
-        <div className="h-64 overflow-y-auto space-y-3 rounded-2xl border border-zinc-800/70 bg-zinc-900/30 p-3.5">
+        <div className="h-64 space-y-3 overflow-y-auto rounded-2xl border border-zinc-800/70 bg-zinc-900/30 p-3.5">
           {messages.map((msg, idx) => (
             <div
               key={idx}
@@ -135,11 +132,11 @@ export function MerchantCopilotModal({ isOpen, onClose }: MerchantCopilotModalPr
                 className={`max-w-[85%] rounded-xl p-3 text-xs leading-relaxed ${
                   msg.sender === 'user'
                     ? 'bg-indigo-600 text-white'
-                    : 'bg-zinc-800/80 text-zinc-200 border border-zinc-700/50 shadow-sm'
+                    : 'border border-zinc-700/50 bg-zinc-800/80 text-zinc-200 shadow-sm'
                 }`}
               >
                 {msg.sender === 'copilot' && (
-                  <div className="flex items-center gap-1.5 font-semibold text-indigo-400 mb-1">
+                  <div className="mb-1 flex items-center gap-1.5 font-semibold text-indigo-400">
                     <Sparkles className="size-3.5" />
                     <span>Merchant AI Copilot</span>
                   </div>
@@ -150,8 +147,8 @@ export function MerchantCopilotModal({ isOpen, onClose }: MerchantCopilotModalPr
           ))}
           {loading && (
             <div className="flex justify-start">
-              <div className="rounded-xl bg-zinc-800/80 p-3 text-xs text-zinc-400 border border-zinc-700/50 animate-pulse flex items-center gap-2">
-                <Database className="size-3.5 text-indigo-400 animate-spin" />
+              <div className="flex animate-pulse items-center gap-2 rounded-xl border border-zinc-700/50 bg-zinc-800/80 p-3 text-xs text-zinc-400">
+                <Database className="size-3.5 animate-spin text-indigo-400" />
                 <span>Querying live SQLite database tables...</span>
               </div>
             </div>
@@ -159,7 +156,7 @@ export function MerchantCopilotModal({ isOpen, onClose }: MerchantCopilotModalPr
         </div>
 
         {/* Input Bar */}
-        <div className="flex gap-2 pt-1 border-t border-zinc-800/60">
+        <div className="flex gap-2 border-t border-zinc-800/60 pt-1">
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -170,7 +167,7 @@ export function MerchantCopilotModal({ isOpen, onClose }: MerchantCopilotModalPr
           <Button
             onClick={() => handleSend()}
             disabled={loading || !query.trim()}
-            className="bg-indigo-600 text-white hover:bg-indigo-500 px-4"
+            className="bg-indigo-600 px-4 text-white hover:bg-indigo-500"
           >
             <Send className="size-4" />
           </Button>

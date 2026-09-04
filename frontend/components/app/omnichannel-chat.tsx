@@ -1,21 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
+  CheckCircle2,
+  CreditCard,
   MessageSquare,
+  Plus,
   Send,
   ShoppingCart,
   Sparkles,
-  CreditCard,
-  Plus,
   Trash2,
-  CheckCircle2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 interface CartItem {
   id: number;
@@ -77,7 +77,12 @@ export function OmnichannelChat() {
 
     try {
       // 1. Checkout / Payment
-      if (qLower.includes('checkout') || qLower.includes('pay') || qLower.includes('payment') || qLower.includes('kharidna')) {
+      if (
+        qLower.includes('checkout') ||
+        qLower.includes('pay') ||
+        qLower.includes('payment') ||
+        qLower.includes('kharidna')
+      ) {
         const res = await fetch('/api/commerce/cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -109,12 +114,15 @@ export function OmnichannelChat() {
         let qty = 1.0;
 
         if (qLower.includes('oil') || qLower.includes('tel')) product = 'Fortune Sunflower Oil';
-        else if (qLower.includes('mustard') || qLower.includes('sarson')) product = 'Dabur Mustard Oil';
+        else if (qLower.includes('mustard') || qLower.includes('sarson'))
+          product = 'Dabur Mustard Oil';
         else if (qLower.includes('atta')) product = 'Aashirvaad Whole Wheat Atta';
         else if (qLower.includes('dal')) product = 'Toor Dal';
-        else if (qLower.includes('mango') || qLower.includes('aam')) product = 'Fresh Alphonso Mangoes';
+        else if (qLower.includes('mango') || qLower.includes('aam'))
+          product = 'Fresh Alphonso Mangoes';
         else if (qLower.includes('apple') || qLower.includes('seb')) product = 'Shimla Apples';
-        else if (qLower.includes('milk') || qLower.includes('doodh')) product = 'Amul Taaza Toned Milk';
+        else if (qLower.includes('milk') || qLower.includes('doodh'))
+          product = 'Amul Taaza Toned Milk';
 
         if (qLower.includes('2') || qLower.includes('do')) qty = 2.0;
         if (qLower.includes('5') || qLower.includes('panch')) qty = 5.0;
@@ -168,7 +176,9 @@ export function OmnichannelChat() {
         });
         const data = await res.json();
         if (data.success && data.recommendations?.length > 0) {
-          const recNames = data.recommendations.map((r: { name: string; price: number }) => `${r.name} (₹${r.price})`).join(', ');
+          const recNames = data.recommendations
+            .map((r: { name: string; price: number }) => `${r.name} (₹${r.price})`)
+            .join(', ');
           setMessages((prev) => [
             ...prev,
             {
@@ -195,27 +205,34 @@ export function OmnichannelChat() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
       {/* Omnichannel Chat Box */}
-      <Card className="md:col-span-7 border-zinc-800/80 bg-zinc-950/70 p-4 text-white shadow-xl backdrop-blur-md flex flex-col justify-between h-[420px]">
+      <Card className="flex h-[420px] flex-col justify-between border-zinc-800/80 bg-zinc-950/70 p-4 text-white shadow-xl backdrop-blur-md md:col-span-7">
         <div>
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800/60">
+          <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
             <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <div className="flex size-7 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
                 <MessageSquare className="size-4" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">Omnichannel Text & Voice Assistant</h3>
-                <p className="text-[11px] text-zinc-400">Conversational AI synced with your active session</p>
+                <h3 className="text-sm font-semibold text-white">
+                  Omnichannel Text & Voice Assistant
+                </h3>
+                <p className="text-[11px] text-zinc-400">
+                  Conversational AI synced with your active session
+                </p>
               </div>
             </div>
-            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px]">
+            <Badge
+              variant="outline"
+              className="border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-400"
+            >
               Active Sync
             </Badge>
           </div>
 
           {/* Messages */}
-          <div className="mt-3 space-y-2.5 h-64 overflow-y-auto pr-1">
+          <div className="mt-3 h-64 space-y-2.5 overflow-y-auto pr-1">
             {messages.map((m, idx) => (
               <div
                 key={idx}
@@ -224,8 +241,8 @@ export function OmnichannelChat() {
                 <div
                   className={`max-w-[85%] rounded-xl p-2.5 text-xs leading-relaxed ${
                     m.sender === 'user'
-                      ? 'bg-emerald-600 text-white font-medium'
-                      : 'bg-zinc-900 border border-zinc-800 text-zinc-200 shadow-sm'
+                      ? 'bg-emerald-600 font-medium text-white'
+                      : 'border border-zinc-800 bg-zinc-900 text-zinc-200 shadow-sm'
                   }`}
                 >
                   {m.text}
@@ -234,8 +251,8 @@ export function OmnichannelChat() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-2.5 text-xs text-zinc-400 animate-pulse flex items-center gap-2">
-                  <Sparkles className="size-3.5 text-emerald-400 animate-spin" />
+                <div className="flex animate-pulse items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 p-2.5 text-xs text-zinc-400">
+                  <Sparkles className="size-3.5 animate-spin text-emerald-400" />
                   <span>Agent is processing intent & database tools...</span>
                 </div>
               </div>
@@ -244,7 +261,7 @@ export function OmnichannelChat() {
         </div>
 
         {/* Input Bar */}
-        <div className="flex gap-2 pt-2 border-t border-zinc-800/60">
+        <div className="flex gap-2 border-t border-zinc-800/60 pt-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -255,7 +272,7 @@ export function OmnichannelChat() {
           <Button
             onClick={() => handleSendMessage()}
             disabled={loading || !input.trim()}
-            className="bg-emerald-600 text-white hover:bg-emerald-500 px-3"
+            className="bg-emerald-600 px-3 text-white hover:bg-emerald-500"
           >
             <Send className="size-4" />
           </Button>
@@ -263,11 +280,11 @@ export function OmnichannelChat() {
       </Card>
 
       {/* Live Synchronized Cart Card */}
-      <Card className="md:col-span-5 border-zinc-800/80 bg-zinc-950/70 p-4 text-white shadow-xl backdrop-blur-md flex flex-col justify-between h-[420px]">
+      <Card className="flex h-[420px] flex-col justify-between border-zinc-800/80 bg-zinc-950/70 p-4 text-white shadow-xl backdrop-blur-md md:col-span-5">
         <div>
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800/60">
+          <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
             <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              <div className="flex size-7 items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-400">
                 <ShoppingCart className="size-4" />
               </div>
               <div>
@@ -286,7 +303,7 @@ export function OmnichannelChat() {
                 setPaymentIntent(null);
                 toast.info('Cart cleared');
               }}
-              className="text-zinc-400 hover:text-red-400 text-xs flex items-center gap-1 transition-colors"
+              className="flex items-center gap-1 text-xs text-zinc-400 transition-colors hover:text-red-400"
             >
               <Trash2 className="size-3" />
               <span>Clear</span>
@@ -294,8 +311,8 @@ export function OmnichannelChat() {
           </div>
 
           {/* Cart Items List */}
-          <div className="mt-3 space-y-2 h-44 overflow-y-auto pr-1">
-            {(!cart?.items || cart.items.length === 0) ? (
+          <div className="mt-3 h-44 space-y-2 overflow-y-auto pr-1">
+            {!cart?.items || cart.items.length === 0 ? (
               <div className="py-12 text-center text-xs text-zinc-500">
                 Cart is empty. Speak or type to add items!
               </div>
@@ -311,9 +328,7 @@ export function OmnichannelChat() {
                       {item.quantity} {item.unit || 'unit'} × ₹{item.unit_price}
                     </p>
                   </div>
-                  <span className="font-mono font-bold text-emerald-400">
-                    ₹{item.total_price}
-                  </span>
+                  <span className="font-mono font-bold text-emerald-400">₹{item.total_price}</span>
                 </div>
               ))
             )}
@@ -321,7 +336,7 @@ export function OmnichannelChat() {
         </div>
 
         {/* Cart Totals & Checkout Button */}
-        <div className="pt-3 border-t border-zinc-800/60 space-y-2">
+        <div className="space-y-2 border-t border-zinc-800/60 pt-3">
           <div className="flex justify-between text-xs text-zinc-400">
             <span>Subtotal:</span>
             <span className="font-mono text-zinc-200">₹{cart?.subtotal || 0}</span>
@@ -330,15 +345,15 @@ export function OmnichannelChat() {
             <span>Delivery Fee (Free &gt; ₹500):</span>
             <span className="font-mono text-zinc-200">₹{cart?.delivery_fee || 0}</span>
           </div>
-          <div className="flex justify-between text-xs font-bold text-white pt-1 border-t border-zinc-800/40">
+          <div className="flex justify-between border-t border-zinc-800/40 pt-1 text-xs font-bold text-white">
             <span>Total Payable:</span>
-            <span className="font-mono text-emerald-400 text-sm">₹{cart?.total_amount || 0}</span>
+            <span className="font-mono text-sm text-emerald-400">₹{cart?.total_amount || 0}</span>
           </div>
 
           <Button
             onClick={() => handleSendMessage('checkout')}
             disabled={!cart?.items || cart.items.length === 0 || loading}
-            className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5"
+            className="flex w-full items-center justify-center gap-1.5 bg-cyan-600 text-xs font-semibold text-white hover:bg-cyan-500"
           >
             <CreditCard className="size-3.5" />
             <span>Generate Payment Intent (UPI / QR)</span>
@@ -346,8 +361,10 @@ export function OmnichannelChat() {
 
           {paymentIntent && (
             <div className="mt-2 rounded-lg border border-emerald-500/30 bg-emerald-950/30 p-2 text-center text-xs text-emerald-300">
-              <CheckCircle2 className="size-4 inline-block mr-1 text-emerald-400" />
-              <span>Payment Intent <strong>{paymentIntent.payment_id as string}</strong> Ready!</span>
+              <CheckCircle2 className="mr-1 inline-block size-4 text-emerald-400" />
+              <span>
+                Payment Intent <strong>{paymentIntent.payment_id as string}</strong> Ready!
+              </span>
             </div>
           )}
         </div>

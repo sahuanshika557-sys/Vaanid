@@ -19,7 +19,12 @@ export async function POST() {
     // Step 3: Add Basmati Rice & Toor Dal to cart
     runPythonDbApi([
       'manage_cart',
-      JSON.stringify({ action: 'add', product_name: 'Basmati Rice', quantity: 1.0, user_id: demoUser }),
+      JSON.stringify({
+        action: 'add',
+        product_name: 'Basmati Rice',
+        quantity: 1.0,
+        user_id: demoUser,
+      }),
     ]);
     const cartRes = runPythonDbApi([
       'manage_cart',
@@ -52,9 +57,6 @@ export async function POST() {
       message: 'Full autonomous commerce flow executed successfully across 5 agentic steps!',
     });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: (error as Error).message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
   }
 }

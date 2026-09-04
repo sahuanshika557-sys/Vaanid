@@ -11,8 +11,8 @@ import {
 } from '@/components/agents-ui/agent-control-bar';
 import { DebugPanel } from '@/components/agents-ui/debug-panel';
 import { Shimmer } from '@/components/ai-elements/shimmer';
-import { cn } from '@/lib/shadcn/utils';
 import { getProductImage } from '@/lib/product-images';
+import { cn } from '@/lib/shadcn/utils';
 import { TileLayout } from './tile-view';
 
 const MotionMessage = motion.create(Shimmer);
@@ -138,9 +138,7 @@ function AgentStatusHeader({
 }) {
   let badgeColor = 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
   let dotColor = 'bg-emerald-400 animate-pulse';
-  let label = handoffInfo?.agentName
-    ? `✨ ${handoffInfo.agentName}`
-    : '🎤 Listening to you';
+  let label = handoffInfo?.agentName ? `✨ ${handoffInfo.agentName}` : '🎤 Listening to you';
 
   if (handoffInfo?.status === 'transferring') {
     badgeColor = 'border-amber-500/30 bg-amber-500/10 text-amber-400';
@@ -262,7 +260,7 @@ function AgentStatusHeader({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.9 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="border-emerald-500/30 bg-slate-950/90 pointer-events-auto max-w-sm overflow-hidden rounded-2xl border p-3 shadow-2xl backdrop-blur-xl"
+            className="pointer-events-auto max-w-sm overflow-hidden rounded-2xl border border-emerald-500/30 bg-slate-950/90 p-3 shadow-2xl backdrop-blur-xl"
           >
             {catalogueInfo.status === 'checking' && (
               <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
@@ -273,7 +271,7 @@ function AgentStatusHeader({
             {catalogueInfo.status === 'found' && (
               <div className="flex items-center gap-3">
                 {/* Product Image Thumbnail */}
-                <div className="relative size-16 shrink-0 overflow-hidden rounded-xl border border-emerald-500/20 bg-muted/30">
+                <div className="bg-muted/30 relative size-16 shrink-0 overflow-hidden rounded-xl border border-emerald-500/20">
                   <img
                     src={getProductImage(catalogueInfo.title || '')}
                     alt={catalogueInfo.title || 'Product'}
@@ -283,13 +281,17 @@ function AgentStatusHeader({
                 </div>
 
                 <div className="flex flex-col gap-0.5 text-xs">
-                  <div className="flex items-center gap-1.5 font-extrabold text-emerald-400 text-[11px]">
-                    <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-emerald-400">
+                    <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
                     <span>PRODUCT FOUND</span>
                   </div>
-                  <div className="text-white font-bold text-sm leading-tight">{catalogueInfo.title}</div>
+                  <div className="text-sm leading-tight font-bold text-white">
+                    {catalogueInfo.title}
+                  </div>
                   {catalogueInfo.priceInfo && (
-                    <div className="text-emerald-300 font-semibold text-xs">{catalogueInfo.priceInfo}</div>
+                    <div className="text-xs font-semibold text-emerald-300">
+                      {catalogueInfo.priceInfo}
+                    </div>
                   )}
                   {catalogueInfo.stockInfo && (
                     <div className="text-[11px] font-medium text-emerald-400/90">

@@ -10,9 +10,6 @@ export async function GET(request: NextRequest) {
     const res = runPythonDbApi(['get_commerce_events', limit]);
     return NextResponse.json(res);
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: (error as Error).message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
   }
 }

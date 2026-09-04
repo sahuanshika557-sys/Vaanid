@@ -47,7 +47,8 @@ export async function POST(req: Request) {
     // Parse room config from request body (if provided).
     const body = await req.json().catch(() => ({}));
     let roomConfig: RoomConfiguration | undefined;
-    const effectiveAgentName = (AGENT_NAME && AGENT_NAME.trim().length > 0) ? AGENT_NAME.trim() : 'mindia';
+    const effectiveAgentName =
+      AGENT_NAME && AGENT_NAME.trim().length > 0 ? AGENT_NAME.trim() : 'mindia';
 
     if (body?.room_config) {
       roomConfig = RoomConfiguration.fromJson(body.room_config, { ignoreUnknownFields: true });

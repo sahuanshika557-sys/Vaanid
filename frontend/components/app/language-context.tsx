@@ -9,7 +9,10 @@ export type Translations = Record<string, { en: string; hi: string }>;
 export const translations: Translations = {
   // Navigation & Brand
   brandName: { en: 'DukanVaani AI', hi: 'दुकानवाणी एआई' },
-  brandSubtitle: { en: 'Dukan Ki Apni Awaaz • Voice Commerce', hi: 'दुकान की अपनी आवाज़ • वॉइस कॉमर्स' },
+  brandSubtitle: {
+    en: 'Dukan Ki Apni Awaaz • Voice Commerce',
+    hi: 'दुकान की अपनी आवाज़ • वॉइस कॉमर्स',
+  },
   navOverview: { en: 'Overview', hi: 'अवलोकन' },
   navAICommerce: { en: 'AI Commerce', hi: 'एआई कॉमर्स' },
   navCopilot: { en: 'Merchant Copilot', hi: 'मर्चेंट कोपायलट' },
@@ -35,11 +38,17 @@ export const translations: Translations = {
   skipToCard: { en: 'Skip to Assistant ↓', hi: 'असिस्टेंट पर जाएँ ↓' },
 
   // Voice Assistant Card & States
-  voiceCardTitle: { en: 'Anisha — Local Commerce Voice Assistant', hi: 'अनीशा — स्थानीय कॉमर्स वॉइस असिस्टेंट' },
+  voiceCardTitle: {
+    en: 'Anisha — Local Commerce Voice Assistant',
+    hi: 'अनीशा — स्थानीय कॉमर्स वॉइस असिस्टेंट',
+  },
   startVoiceCall: { en: 'Start Voice Assistant', hi: 'वॉइस असिस्टेंट शुरू करें' },
   endVoiceCall: { en: 'End Call', hi: 'कॉल समाप्त करें' },
   agentReady: { en: 'Ready to help', hi: 'मदद के लिए तैयार' },
-  agentConnecting: { en: 'Connecting to Voice Assistant...', hi: 'वॉइस असिस्टेंट से कनेक्ट हो रहा है...' },
+  agentConnecting: {
+    en: 'Connecting to Voice Assistant...',
+    hi: 'वॉइस असिस्टेंट से कनेक्ट हो रहा है...',
+  },
   agentListening: { en: '🎤 Listening to you...', hi: '🎤 आपकी आवाज़ सुन रहा है...' },
   agentSpeaking: { en: '🔊 Assistant is speaking...', hi: '🔊 असिस्टेंट बोल रहा है...' },
   agentEnded: { en: 'Conversation Ended', hi: 'बातचीत समाप्त हुई' },

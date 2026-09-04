@@ -1,7 +1,15 @@
 export interface ProductItem {
   id: string;
   name: string;
-  category: 'Groceries' | 'Fruits' | 'Vegetables' | 'Household' | 'Personal Care' | 'Snacks' | 'Beverages' | 'Bakery';
+  category:
+    | 'Groceries'
+    | 'Fruits'
+    | 'Vegetables'
+    | 'Household'
+    | 'Personal Care'
+    | 'Snacks'
+    | 'Beverages'
+    | 'Bakery';
   description: string;
   price: number;
   currency: string;
@@ -28,7 +36,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Main Market',
     badge: 'Bestseller',
     rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P002',
@@ -43,7 +52,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Main Market',
     badge: 'Essential',
     rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P003',
@@ -58,7 +68,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Main Market',
     badge: 'Pure & Cold Pressed',
     rating: 4.7,
-    image: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P004',
@@ -73,7 +84,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Main Market',
     badge: 'Low Stock (3 left)',
     rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P005',
@@ -88,7 +100,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Main Market',
     badge: 'High Protein',
     rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P006',
@@ -103,7 +116,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Sabzi Mandi',
     badge: 'Seasonal Top Pick',
     rating: 5.0,
-    image: 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P007',
@@ -118,7 +132,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Sabzi Mandi',
     badge: 'Fresh Harvest',
     rating: 4.7,
-    image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P008',
@@ -133,7 +148,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Sabzi Mandi',
     badge: 'Daily Fresh',
     rating: 4.6,
-    image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P009',
@@ -148,7 +164,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Sabzi Mandi',
     badge: 'Direct from Farm',
     rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P010',
@@ -163,7 +180,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Sabzi Mandi',
     badge: 'Kitchen Staple',
     rating: 4.7,
-    image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cf?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cf?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P016',
@@ -178,7 +196,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Main Market',
     badge: 'Chai Time Special',
     rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281232?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1621996346565-e3d5d6281232?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P018',
@@ -193,7 +212,8 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Main Market',
     badge: 'Daily Dairy',
     rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=800&q=80',
   },
 ];
 
@@ -209,10 +229,20 @@ export function getProductImage(productQuery: string): string {
   if (query.includes('mustard') || query.includes('sarson') || query.includes('तेल')) {
     return 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?auto=format&fit=crop&w=800&q=80';
   }
-  if (query.includes('atta') || query.includes('wheat') || query.includes('flour') || query.includes('आटा')) {
+  if (
+    query.includes('atta') ||
+    query.includes('wheat') ||
+    query.includes('flour') ||
+    query.includes('आटा')
+  ) {
     return 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80';
   }
-  if (query.includes('dal') || query.includes('toor') || query.includes('lentil') || query.includes('दाल')) {
+  if (
+    query.includes('dal') ||
+    query.includes('toor') ||
+    query.includes('lentil') ||
+    query.includes('दाल')
+  ) {
     return 'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?auto=format&fit=crop&w=800&q=80';
   }
   if (query.includes('mango') || query.includes('alphonso') || query.includes('आम')) {
@@ -230,7 +260,12 @@ export function getProductImage(productQuery: string): string {
   if (query.includes('onion') || query.includes('प्याज')) {
     return 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cf?auto=format&fit=crop&w=800&q=80';
   }
-  if (query.includes('snack') || query.includes('bhujia') || query.includes('lays') || query.includes('chips')) {
+  if (
+    query.includes('snack') ||
+    query.includes('bhujia') ||
+    query.includes('lays') ||
+    query.includes('chips')
+  ) {
     return 'https://images.unsplash.com/photo-1621996346565-e3d5d6281232?auto=format&fit=crop&w=800&q=80';
   }
   if (query.includes('milk') || query.includes('amul') || query.includes('दूध')) {
