@@ -117,7 +117,14 @@ function handleServerlessDbFallback(args: string[]): Record<string, unknown> {
     return {
       success: true,
       query: args[1],
+      answer: response,
       response,
+      data: {
+        today_revenue: 12450,
+        total_orders: 18,
+        low_stock_count: 1,
+        abandoned_carts: 2,
+      },
       insights: {
         today_revenue: 12450,
         total_orders: 18,

@@ -60,11 +60,16 @@ export function MerchantCopilotModal({ isOpen, onClose }: MerchantCopilotModalPr
       });
       const data = await res.json();
       if (data.success) {
-        setMessages((prev) => [...prev, { sender: 'copilot', text: data.answer, data: data.data }]);
+        const replyText =
+          data.answer || data.response || data.message || 'Data retrieved successfully.';
+        setMessages((prev) => [
+          ...prev,
+          { sender: 'copilot', text: replyText, data: data.data || data.insights },
+        ]);
       } else {
         setMessages((prev) => [
           ...prev,
-          { sender: 'copilot', text: 'Sorry, data retrieve karne mein error aaya.' },
+          { sender: 'copilot', text: data.error || 'Sorry, data retrieve karne mein error aaya.' },
         ]);
       }
     } catch {
