@@ -24,7 +24,9 @@ const VIEW_MOTION_PROPS = {
   transition: { duration: 0.4, ease: 'linear' },
 };
 
-function CallEndedView({ onRestart }: { onRestart: () => void }) {
+function CallEndedView({ onRestart }: { onRestart: () => Promise<void> | void }) {
+  const [restarting, setRestarting] = useState(false);
+
   return (
     <div className="flex min-h-svh flex-col items-center justify-center p-6 text-center">
       <div className="mb-6 flex size-20 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 shadow-xl ring-8 ring-emerald-500/5">
@@ -50,10 +52,26 @@ function CallEndedView({ onRestart }: { onRestart: () => void }) {
       </p>
       <Button
         size="lg"
-        onClick={onRestart}
-        className="mt-8 rounded-full bg-linear-to-r from-emerald-600 to-teal-600 px-8 py-6 text-xs font-bold tracking-wider text-white uppercase shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:scale-105 hover:from-emerald-500 hover:to-teal-500"
+        disabled={restarting}
+        onClick={async () => {
+          if (restarting) return;
+          setRestarting(true);
+          try {
+            await onRestart();
+          } finally {
+            setRestarting(false);
+          }
+        }}
+        className="mt-8 rounded-full bg-linear-to-r from-emerald-600 to-teal-600 px-8 py-6 text-xs font-bold tracking-wider text-white uppercase shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:scale-105 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 cursor-pointer"
       >
-        Start Again
+        {restarting ? (
+          <span className="flex items-center gap-2">
+            <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            Connecting...
+          </span>
+        ) : (
+          'Start Again'
+        )}
       </Button>
     </div>
   );
@@ -118,12 +136,16 @@ export function ViewController({ appConfig }: ViewControllerProps) {
 
   const [hasEnded, setHasEnded] = useState(false);
   const [micError, setMicError] = useState<'blocked' | 'not_found' | 'generic' | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const isStartingRef = useRef(false);
   const wasConnectedRef = useRef(false);
 
   useEffect(() => {
     if (isConnected && room) {
       wasConnectedRef.current = true;
       setHasEnded(false);
+      setIsStarting(false);
+      isStartingRef.current = false;
       // Safely unlock browser audio playback context
       room.startAudio().catch((err) => console.warn('startAudio failed:', err));
     } else if (wasConnectedRef.current && !isConnecting) {
@@ -132,6 +154,12 @@ export function ViewController({ appConfig }: ViewControllerProps) {
   }, [isConnected, isConnecting, room]);
 
   const handleStartCall = async () => {
+    if (isStartingRef.current || isConnecting || isConnected) {
+      console.log('Call start already in progress, ignoring duplicate clicks.');
+      return;
+    }
+    isStartingRef.current = true;
+    setIsStarting(true);
     setMicError(null);
     setHasEnded(false);
     wasConnectedRef.current = false;
@@ -176,6 +204,9 @@ export function ViewController({ appConfig }: ViewControllerProps) {
       } else {
         setMicError('generic');
       }
+    } finally {
+      isStartingRef.current = false;
+      setIsStarting(false);
     }
   };
 
@@ -214,7 +245,7 @@ export function ViewController({ appConfig }: ViewControllerProps) {
           {...VIEW_MOTION_PROPS}
           startButtonText={appConfig.startButtonText}
           onStartCall={handleStartCall}
-          isConnecting={isConnecting}
+          isConnecting={isConnecting || isStarting}
         />
       )}
 

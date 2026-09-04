@@ -33,7 +33,7 @@ export function useAgentErrors() {
       return;
     }
 
-    // Give 35-second grace period for cloud container / WebRTC initialization
+    // Give 45-second grace period for cloud container / WebRTC initialization
     const timer = setTimeout(() => {
       if (agent.state === 'failed') {
         const reasons = agent.failureReasons;
@@ -67,7 +67,7 @@ export function useAgentErrors() {
 
         end();
       }
-    }, 15_000);
+    }, 45_000);
 
     return () => clearTimeout(timer);
   }, [agent.state, agent.failureReasons, isConnected, end]);

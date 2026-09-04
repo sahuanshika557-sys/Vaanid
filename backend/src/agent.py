@@ -838,7 +838,7 @@ def zero_load(*args, **kwargs) -> float:
     return 0.0
 
 
-num_idle = 0 if (os.getenv("RENDER") or os.getenv("PORT")) else 1
+num_idle = 1
 server = AgentServer(port=0, load_threshold=10.0, load_fnc=zero_load, num_idle_processes=num_idle)
 
 
@@ -850,7 +850,8 @@ def prewarm(proc: JobProcess):
 server.setup_fnc = prewarm
 
 
-AGENT_NAME = os.getenv("AGENT_NAME", "mindia")
+env_agent = os.getenv("AGENT_NAME")
+AGENT_NAME = env_agent.strip() if (env_agent and env_agent.strip()) else "mindia"
 
 
 @server.rtc_session(agent_name=AGENT_NAME)
