@@ -899,18 +899,24 @@ async def my_agent(ctx: JobContext):
 
     ctx.add_shutdown_callback(_on_shutdown)
 
+    # In 512MB cloud environments (Render Free Tier), avoid neural BVC models to stay under memory limit.
+    # Deepgram Nova-3 cloud STT natively filters background noise and enhances speech clarity.
+    is_cloud = bool(os.getenv("RENDER") or os.getenv("PORT"))
+    noise_canceller = None
+    if not is_cloud:
+        noise_canceller = lambda params: (
+            noise_cancellation.BVCTelephony()
+            if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP
+            else noise_cancellation.BVC()
+        )
+
     # Start session atomically (joins room + publishes audio track simultaneously)
     await session.start(
         agent=assistant,
         room=ctx.room,
         room_options=room_io.RoomOptions(
             audio_input=room_io.AudioInputOptions(
-                noise_cancellation=lambda params: (
-                    noise_cancellation.BVCTelephony()
-                    if params.participant.kind
-                    == rtc.ParticipantKind.PARTICIPANT_KIND_SIP
-                    else noise_cancellation.BVC()
-                ),
+                noise_cancellation=noise_canceller,
             ),
         ),
     )
@@ -984,4 +990,7 @@ def start_health_server():
 start_health_server()
 
 if __name__ == "__main__":
+    if (os.getenv("RENDER") or os.getenv("PORT")) and "dev" in sys.argv:
+        print("[VAANID_CLOUD] Auto-converting 'dev' to 'start' mode on Render to avoid watchdog memory overhead.")
+        sys.argv[sys.argv.index("dev")] = "start"
     cli.run_app(server)

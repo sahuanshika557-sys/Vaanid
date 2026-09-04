@@ -163,7 +163,7 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Sabzi Mandi',
     badge: 'Kitchen Staple',
     rating: 4.7,
-    image: 'https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cf?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P016',
@@ -178,7 +178,7 @@ export const CATALOGUE_ITEMS: ProductItem[] = [
     location: 'Kanpur Main Market',
     badge: 'Chai Time Special',
     rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281232?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'P018',
