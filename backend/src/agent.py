@@ -875,7 +875,7 @@ async def my_agent(ctx: JobContext):
             language="multi",
         ),
         llm=google.LLM(
-            model="gemini-3.5-flash-lite",
+            model="gemini-3.1-flash-lite",
         ),
         tts=murf.TTS(
             voice="Anisha",
